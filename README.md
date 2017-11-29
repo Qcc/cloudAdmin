@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # y
 
 > y
@@ -25,3 +26,7 @@ npm test
 ```
 
 For a detailed explanation on how things work, check out the [guide](http://vuejs-templates.github.io/webpack/) and [docs for vue-loader](http://vuejs.github.io/vue-loader).
+=======
+# cloudAdmin
+cloudAdmin
+>>>>>>> 962c74f0067e3b11e4a9a593521a0c627e59be87

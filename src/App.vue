@@ -1,13 +1,22 @@
 <template>
   <div id="app">
     <div class="top-nav">dingbu</div>
-    <router-view/>
+    <el-row >
+      <el-col :span="4">
+        <Nav-bar/>
+      </el-col>
+      <router-view class="content-style"/>
+    </el-row>
   </div>
 </template>
 
 <script>
+import Navbar from '@/components/Nav'
 export default {
-  name: 'app'
+  name: 'app',
+  components: {
+    'Nav-bar': Navbar
+  }
 }
 </script>
 
@@ -31,7 +40,8 @@ body {margin:0; padding:0;
   font-size: 12px;
   line-height: 1.5;
   color: #657180;
-  background:#ffffff;} 
+  background:#ffffff;
+  } 
 div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,form,fieldset,input,textarea,blockquote,p{padding:0; margin:0;} 
 table,td,tr,th{font-size:12px;} 
 li{list-style-type:none;} 
@@ -46,5 +56,8 @@ a{
   outline: 0;
   cursor: pointer;
   transition: color .2s ease;
+}
+.content-style{
+  padding: 15px;
 }
 </style>

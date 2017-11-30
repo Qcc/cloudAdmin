@@ -5,8 +5,7 @@
       :props="defaultProps"
       show-checkbox
       node-key="id"
-      lazy
-      :load="loadTree"
+      :data="data"
       default-expand-all
       :expand-on-click-node="false"
       :render-content="renderContent">
@@ -22,22 +21,12 @@ export default {
       addSection: '',
       defaultProps: {
         children: 'children',
-        label: 'label',
-        isLeaf: 'leaf',
-        level: 0
+        label: 'label'
       },
-      count: 1
-    }
-  },
-  methods: {
-    loadTree (node, resolve) {
-      console.log(node)
-      if (node.level === 0) {
-        return resolve([{label: '网站'}])
-      }
-      if (node.level > 2) return resolve([])
-      setTimeout(() => {
-        var section = [{
+      data: [{
+        id: 1,
+        label: '网站',
+        children: [{
           id: 2,
           label: '科技',
           children: [{
@@ -67,10 +56,10 @@ export default {
               children: [{
                 id: 4,
                 label: '推荐'
-              }]}]
-        return resolve(section)
-      }, 500)
-    },
+              }]}]}]
+    }
+  },
+  methods: {
     append (data) {
       const newChild = { id: id++, label: 'testtest', children: [] }
       if (!data.children) {
@@ -85,14 +74,15 @@ export default {
       children.splice(index, 1)
     },
     renderContent (h, { node, data, store }) {
+      console.log('node', node, 'data', data, 'store', store)
       return (
         <span style="flex: 1; display: flex; align-items: center; justify-content: space-between; font-size: 14px; padding-right: 8px;">
           <span>
             <span>{node.label}</span>
           </span>
           <span>
-            <el-input style="width:100px;padding-right: 8px;" size="mini" v-model="addSection" placeholder="请输入类目"></el-input>
-            <el-button style="font-size: 12px;" type="text" on-click={ () => this.append(data) }>添加</el-button>
+            <el-input style="width:100px;padding-right: 8px;" v-show={!node.isLeaf} size="mini" v-model="addSection" placeholder="请输入类目"></el-input>
+            <el-button style="font-size: 12px;" type="text" v-show={!node.isLeaf} on-click={ () => this.append(data) }>添加</el-button>
             <el-button style="font-size: 12px;" type="text" on-click={ () => this.append(data) }>上移</el-button>
             <el-button style="font-size: 12px;" type="text" on-click={ () => this.remove(node, data) }>下移</el-button>
             <el-button style="font-size: 12px;" type="text" on-click={ () => this.remove(node, data) }>删除</el-button>

@@ -13,6 +13,7 @@
     "build": "node build/build.js"
   },
   "dependencies": {
+    "babel-plugin-jsx-v-model": "^2.0.3",
     "element-ui": "^2.0.6",
     "vue": "^2.5.2",
     "vue-router": "^3.0.1"

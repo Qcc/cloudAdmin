@@ -13,79 +13,84 @@
   </el-col>
 </template>
 <script>
-let id = 1000
 export default {
   name: 'Section',
   data () {
     return {
-      addSection: '',
       defaultProps: {
         children: 'children',
-        label: 'label'
+        label: 'label',
+        editble: false, // 控制input框是否显示
+        sectionName: '', // 添加,重命名input字段
+        btnAdd: '添加', // 添加按钮
+        btnRename: '重命名' // 重命名按钮
       },
       data: [{
-        id: 1,
+        id: 0,
         label: '网站',
-        children: [{
-          id: 2,
-          label: '科技',
-          children: [{
-            id: 3,
-            label: '手机'
-          }, {
-            id: 4,
-            label: '智能手机'
-          }, {
-            id: 5,
-            label: '电脑'
-          }]}, {
-            id: 6,
-            label: '图片',
-            children: [{
-              id: 7,
-              label: '动态'
-            }, {
-              id: 8,
-              label: '风景'
-            }, {
-              id: 9,
-              label: '壁纸'
-            }]}, {
-              id: 4,
-              label: '热点',
-              children: [{
-                id: 4,
-                label: '推荐'
-              }]}]}]
+        editble: false,
+        sectionName: '',
+        btnAdd: '添加',
+        btnRename: '重命名',
+        children: []
+      }]
     }
   },
   methods: {
-    append (data) {
-      const newChild = { id: id++, label: 'testtest', children: [] }
-      if (!data.children) {
-        this.$set(data, 'children', [])
+    append (node, data) {
+      console.log('添加', node, data)
+      data.editble = true
+      const section = data.children.findIndex(d => d.label === data.sectionName)
+      if (section !== -1) {
+        this.$message.error('分类已存在,请重新输入！')
+        return
       }
-      data.children.push(newChild)
+      if (data.sectionName === '') {
+        data.btnAdd = '保存'
+      } else {
+        const newChild = { id: data.children.length, editble: false, sectionName: '', btnAdd: '添加', btnRename: '重命名', label: data.sectionName, children: [] }
+        if (!data.children) {
+          this.$set(data, 'children', [])
+        }
+        data.children.push(newChild)
+        data.editble = false
+        data.sectionName = ''
+        data.btnAdd = '添加'
+      }
     },
     remove (node, data) {
-      const parent = node.parent
-      const children = parent.data.children || parent.data
-      const index = children.findIndex(d => d.id === data.id)
-      children.splice(index, 1)
+      console.log('删除', node, data)
+      const treeDate = node.parent.data.children
+      const index = treeDate.findIndex(d => d.id === data.id)
+      if (data.children.length !== 0) {
+        this.$message.error('该目录不为空，不能删除！')
+      } else {
+        treeDate.splice(index, 1)
+      }
+    },
+    upMove (node, data) {
+      console.log('上移', node, data)
+    },
+    downMove (node, data) {
+      console.log('下移', node, data)
+    },
+    reName (node, data) {
+      data.editble = true
+      console.log('重命名', node, data)
     },
     renderContent (h, { node, data, store }) {
-      console.log('node', node, 'data', data, 'store', store)
       return (
         <span style="flex: 1; display: flex; align-items: center; justify-content: space-between; font-size: 14px; padding-right: 8px;">
           <span>
             <span>{node.label}</span>
           </span>
           <span>
-            <el-input style="width:100px;padding-right: 8px;" v-show={!node.isLeaf} size="mini" v-model="addSection" placeholder="请输入类目"></el-input>
-            <el-button style="font-size: 12px;" type="text" v-show={!node.isLeaf} on-click={ () => this.append(data) }>添加</el-button>
-            <el-button style="font-size: 12px;" type="text" on-click={ () => this.append(data) }>上移</el-button>
-            <el-button style="font-size: 12px;" type="text" on-click={ () => this.remove(node, data) }>下移</el-button>
-            <el-button style="font-size: 12px;" type="text" on-click={ () => this.remove(node, data) }>删除</el-button>
+            {data.editble ? <el-input style="width:100px;padding-right: 8px;" maxlength={4} autofocus clearable size="mini" v-model={data.sectionName} placeholder="请输入类目"></el-input> : ''}
+            <el-button style="font-size: 12px;" type="text" v-show={!node.isLeaf || node.level < 3} on-click={ () => this.append(node, data) }>{data.btnAdd}</el-button>
+            <el-button style="font-size: 12px;" type="text" v-show={node.level > 1} on-click={ () => this.upMove(node, data) }>上移</el-button>
+            <el-button style="font-size: 12px;" type="text" v-show={node.level > 1} on-click={ () => this.downMove(node, data) }>下移</el-button>
+            <el-button style="font-size: 12px;" type="text" v-show={node.level > 1} on-click={ () => this.reName(node, data) }>{data.btnRename}</el-button>
+            <el-button style="font-size: 12px;" type="text" v-show={node.level > 1} on-click={ () => this.remove(node, data) }>删除</el-button>
           </span>
         </span>)
     }

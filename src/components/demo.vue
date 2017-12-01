@@ -1,59 +1,107 @@
-<el-tree
-  :props="props"
-  :load="loadNode"
-  lazy
-  show-checkbox
-  @check-change="handleCheckChange">
-</el-tree>
-
+<template>
+  <el-col :span="20">
+    <h1>网站栏目管理</h1>
+    <el-tree
+      :props="defaultProps"
+      show-checkbox
+      node-key="id"
+      lazy
+      :load="loadTree"
+      default-expand-all
+      :expand-on-click-node="false"
+      :render-content="renderContent">
+    </el-tree>
+  </el-col>
+</template>
 <script>
-  export default {
-    data() {
-      return {
-        props: {
-          label: 'name',
-          children: 'zones'
-        },
-        count: 1
-      };
-    },
-    methods: {
-      handleCheckChange(data, checked, indeterminate) {
-        console.log(data, checked, indeterminate);
+let id = 1000
+export default {
+  name: 'Section',
+  data () {
+    return {
+      addSection: '',
+      defaultProps: {
+        children: 'children',
+        label: 'label',
+        isLeaf: 'leaf',
+        level: 0
       },
-      handleNodeClick(data) {
-        console.log(data);
-      },
-      loadNode(node, resolve) {
-        if (node.level === 0) {
-          return resolve([{ name: 'region1' }, { name: 'region2' }]);
-        }
-        if (node.level > 3) return resolve([]);
-
-        var hasChild;
-        if (node.data.name === 'region1') {
-          hasChild = true;
-        } else if (node.data.name === 'region2') {
-          hasChild = false;
-        } else {
-          hasChild = Math.random() > 0.5;
-        }
-
-        setTimeout(() => {
-          var data;
-          if (hasChild) {
-            data = [{
-              name: 'zone' + this.count++
-            }, {
-              name: 'zone' + this.count++
-            }];
-          } else {
-            data = [];
-          }
-
-          resolve(data);
-        }, 500);
-      }
+      count: 1
     }
-  };
+  },
+  methods: {
+    loadTree (node, resolve) {
+      console.log(node.level)
+      if (node.level === 0) {
+        return resolve([{label: '网站'}])
+      }
+      if (node.level > 1) return resolve([])
+      setTimeout(() => {
+        var section = [{
+          id: 2,
+          label: '科技',
+          children: [{
+            id: 3,
+            label: '手机'
+          }, {
+            id: 4,
+            label: '智能手机'
+          }, {
+            id: 5,
+            label: '电脑'
+          }]}, {
+            id: 6,
+            label: '图片',
+            children: [{
+              id: 7,
+              label: '动态'
+            }, {
+              id: 8,
+              label: '风景'
+            }, {
+              id: 9,
+              label: '壁纸'
+            }]}, {
+              id: 4,
+              label: '热点',
+              children: [{
+                id: 4,
+                label: '推荐'
+              }]}]
+        return resolve(section)
+      }, 500)
+    },
+    append (data) {
+      const newChild = { id: id++, label: 'testtest', children: [] }
+      if (!data.children) {
+        this.$set(data, 'children', [])
+      }
+      data.children.push(newChild)
+    },
+    remove (node, data) {
+      const parent = node.parent
+      const children = parent.data.children || parent.data
+      const index = children.findIndex(d => d.id === data.id)
+      children.splice(index, 1)
+    },
+    renderContent (h, { node, data, store }) {
+      return (
+        <span style="flex: 1; display: flex; align-items: center; justify-content: space-between; font-size: 14px; padding-right: 8px;">
+          <span>
+            <span>{node.label}</span>
+          </span>
+          <span>
+            <el-input style="width:100px;padding-right: 8px;" size="mini" v-model="addSection" placeholder="请输入类目"></el-input>
+            <el-button style="font-size: 12px;" type="text" on-click={ () => this.append(data) }>添加</el-button>
+            <el-button style="font-size: 12px;" type="text" on-click={ () => this.append(data) }>上移</el-button>
+            <el-button style="font-size: 12px;" type="text" on-click={ () => this.remove(node, data) }>下移</el-button>
+            <el-button style="font-size: 12px;" type="text" on-click={ () => this.remove(node, data) }>删除</el-button>
+          </span>
+        </span>)
+    }
+  }
+}
 </script>
+<style>
+
+</style>

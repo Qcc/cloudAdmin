@@ -56,6 +56,7 @@ export default {
         data.editble = false
         data.sectionName = ''
         data.btnAdd = '添加'
+        data.btnRename = '重命名'
       }
     },
     remove (node, data) {
@@ -70,13 +71,38 @@ export default {
     },
     upMove (node, data) {
       console.log('上移', node, data)
+      const parent = node.parent.data.children
+      const index = parent.findIndex(d => d.id === data.id)
+      console.log(index)
+      if (index === 0) {
+        this.$message.error('分类已处于首位！')
+      } else {
+        let temp = JSON.parse(JSON.stringify(data))
+        parent[index] = JSON.parse(JSON.stringify(parent[index - 1]))
+        parent[index - 1] = temp
+      }
     },
     downMove (node, data) {
       console.log('下移', node, data)
     },
     reName (node, data) {
-      data.editble = true
       console.log('重命名', node, data)
+      data.editble = true
+      const parent = node.parent.data.children
+      const section = parent.findIndex(d => d.label === data.sectionName)
+      if (section !== -1) {
+        this.$message.error('分类已存在,请重新输入！')
+        return
+      }
+      if (data.sectionName === '') {
+        data.btnRename = '保存'
+      } else {
+        data.label = data.sectionName
+        data.editble = false
+        data.sectionName = ''
+        data.btnRename = '重命名'
+        data.btnAdd = '添加'
+      }
     },
     renderContent (h, { node, data, store }) {
       return (

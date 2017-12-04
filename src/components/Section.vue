@@ -5,7 +5,7 @@
       :props="defaultProps"
       show-checkbox
       node-key="id"
-      :data="data"
+      :data="treeData"
       default-expand-all
       :expand-on-click-node="false"
       :render-content="renderContent">
@@ -13,6 +13,7 @@
   </el-col>
 </template>
 <script>
+import {fetch, URL} from '../utils/connect.js'
 export default {
   name: 'Section',
   data () {
@@ -25,7 +26,7 @@ export default {
         btnAdd: '添加', // 添加按钮
         btnRename: '重命名' // 重命名按钮
       },
-      data: [{
+      treeData: [{
         id: 0,
         label: '网站',
         editble: false,
@@ -36,9 +37,42 @@ export default {
       }]
     }
   },
+  mounted: function () {
+    console.log('组件安装完成')
+    fetch(URL + 'kevin/section.api', this.onInitComplate, 'GET')
+  },
   methods: {
+    onInitComplate (data) {
+      console.log('链接了...', data)
+    },
+    copyArray (target, source) {
+      source.forEach(function (item) {
+        target.push({
+          btnAdd: item.btnAdd,
+          btnRename: item.btnRename,
+          children: item.children,
+          editble: item.editble,
+          id: item.id,
+          label: item.label,
+          sectionName: item.sectionName
+        })
+      })
+    },
+    // 交换相邻兄弟的位置
+    changeTree (current, brother) {
+      var temp = {}
+      var temp1 = {}
+      temp.label = current.label
+      temp.children = current.children.concat()
+      temp1.children = brother.children.concat()
+      current.label = brother.label
+      current.children = []
+      this.copyArray(current.children, temp1.children)
+      brother.label = temp.label
+      brother.children = []
+      this.copyArray(brother.children, temp.children)
+    },
     append (node, data) {
-      console.log('添加', node, data)
       data.editble = true
       const section = data.children.findIndex(d => d.label === data.sectionName)
       if (section !== -1) {
@@ -60,33 +94,48 @@ export default {
       }
     },
     remove (node, data) {
-      console.log('删除', node, data)
       const treeDate = node.parent.data.children
       const index = treeDate.findIndex(d => d.id === data.id)
       if (data.children.length !== 0) {
         this.$message.error('该目录不为空，不能删除！')
       } else {
-        treeDate.splice(index, 1)
+        this.$confirm('您确认要删除该目录吗?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          treeDate.splice(index, 1)
+          this.$message({
+            type: 'success',
+            message: '删除成功!'
+          })
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          })
+        })
       }
     },
     upMove (node, data) {
-      console.log('上移', node, data)
       const parent = node.parent.data.children
       const index = parent.findIndex(d => d.id === data.id)
-      console.log(index)
-      if (index === 0) {
+      if (data.id === parent[0].id) {
         this.$message.error('分类已处于首位！')
       } else {
-        let temp = JSON.parse(JSON.stringify(data))
-        parent[index] = JSON.parse(JSON.stringify(parent[index - 1]))
-        parent[index - 1] = temp
+        this.changeTree(parent[index], parent[index - 1])
       }
     },
     downMove (node, data) {
-      console.log('下移', node, data)
+      const parent = node.parent.data.children
+      const index = parent.findIndex(d => d.id === data.id)
+      if (data.id === parent[parent.length - 1].id) {
+        this.$message.error('分类已处于末位！')
+      } else {
+        this.changeTree(parent[index], parent[index + 1])
+      }
     },
     reName (node, data) {
-      console.log('重命名', node, data)
       data.editble = true
       const parent = node.parent.data.children
       const section = parent.findIndex(d => d.label === data.sectionName)

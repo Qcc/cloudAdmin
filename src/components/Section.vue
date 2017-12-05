@@ -42,9 +42,6 @@ export default {
     fetch(URL + 'kevin/section.api', this.onInitComplate, 'GET')
   },
   methods: {
-    onInitComplate (data) {
-      console.log('链接了...', data)
-    },
     copyArray (target, source) {
       source.forEach(function (item) {
         target.push({
@@ -91,12 +88,57 @@ export default {
         data.sectionName = ''
         data.btnAdd = '添加'
         data.btnRename = '重命名'
+        console.log('this.treeData[0].children ',this.treeData[0].children)
+        fetch(URL + 'kevin/section.api', this.onAddComplate, 'POST', this.treeData[0].children)
       }
+    },
+    // 补全前端自用属性
+    // localAttr (arr) {
+    //   for (let i = 0; i < arr.length; i++) {
+    //     arr[i].editble = false
+    //     arr[i].sectionName = ''
+    //     arr[i].btnAdd = '添加'
+    //     arr[i].btnRename = '重命名'
+    //     if (arr[i].children) {
+    //       this.localAttr(arr[i].children)
+    //     } else {
+    //       arr[i].children = []
+    //     }
+    //     console.log(arr)
+    //   }
+    // },
+    onInitComplate (data) {
+      console.log('链接了...', data)
+      // this.localAttr(data.entity)
+      for (let i = 0; i < data.entity.length; i++) {
+        this.treeData[0].children.push(data.entity[i])
+      }
+    },
+    onAddComplate (data) {
+      console.log('post', data)
+    },
+    onDeleteComplate (data) {
+      console.log('post', data)
+    },
+    onUpdateComplate (data) {
+      console.log('post', data)
+    },
+    onRemoveComplate (data) {
+      console.log('post', data)
+    },
+    onUpmoveComplate (data) {
+      console.log('post', data)
+    },
+    onDownmoveComplate (data) {
+      console.log('post', data)
+    },
+    onRenameComplate (data) {
+      console.log('post', data)
     },
     remove (node, data) {
       const treeDate = node.parent.data.children
       const index = treeDate.findIndex(d => d.id === data.id)
-      if (data.children.length !== 0) {
+      if (data.children && data.children.length !== 0) {
         this.$message.error('该目录不为空，不能删除！')
       } else {
         this.$confirm('您确认要删除该目录吗?', '提示', {
@@ -105,10 +147,7 @@ export default {
           type: 'warning'
         }).then(() => {
           treeDate.splice(index, 1)
-          this.$message({
-            type: 'success',
-            message: '删除成功!'
-          })
+          fetch(URL + 'kevin/section.api', this.onRemoveComplate, 'DELETE', this.treeData[0].children)
         }).catch(() => {
           this.$message({
             type: 'info',
@@ -124,6 +163,7 @@ export default {
         this.$message.error('分类已处于首位！')
       } else {
         this.changeTree(parent[index], parent[index - 1])
+        fetch(URL + 'kevin/section.api', this.onUpmoveComplate, 'PUT', this.treeData[0].children)
       }
     },
     downMove (node, data) {
@@ -133,6 +173,7 @@ export default {
         this.$message.error('分类已处于末位！')
       } else {
         this.changeTree(parent[index], parent[index + 1])
+        fetch(URL + 'kevin/section.api', this.onDownmoveComplate, 'PUT', this.treeData[0].children)
       }
     },
     reName (node, data) {
@@ -151,6 +192,7 @@ export default {
         data.sectionName = ''
         data.btnRename = '重命名'
         data.btnAdd = '添加'
+        fetch(URL + 'kevin/section.api', this.onRenameComplate, 'PUT', this.treeData[0].children)
       }
     },
     renderContent (h, { node, data, store }) {

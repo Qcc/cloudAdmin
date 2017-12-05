@@ -20,18 +20,18 @@ export function fetch (url, onComplete, method, params = {}) {
     method: method,
     crossDomain: true, // 跨域
     withCredentials: true, // 跨域时带Cookie
-    data: {
-      ...params
-    },
+    data: JSON.stringify(params),
+    dataType: 'json',
+    contentType: 'application/json;charset=utf-8',
     type: 'json'
   })
   .then((data) => {
     if (data.status === 200) {
-      // console.log("成功获取到数据 ",JSON.stringify(data, null, 4))
+      // console.log('成功获取到数据', JSON.stringify(data, null, 4))
       onComplete(data)
     } else {
       onComplete(null)
-      // console.log("服务器错误 ",JSON.stringify(data, null, 4))
+      // console.log('服务器错误', JSON.stringify(data, null, 4))
     }
   })
   .fail((err, msg) => {

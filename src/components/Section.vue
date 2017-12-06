@@ -4,7 +4,7 @@
     <el-tree
       :props="defaultProps"
       show-checkbox
-      node-key="id"
+      node-key="idx"
       :data="treeData"
       default-expand-all
       :expand-on-click-node="false"
@@ -27,7 +27,7 @@ export default {
         btnRename: '重命名' // 重命名按钮
       },
       treeData: [{
-        id: 0,
+        idx: 0,
         label: '网站',
         editble: false,
         sectionName: '',
@@ -49,7 +49,7 @@ export default {
           btnRename: item.btnRename,
           children: item.children,
           editble: item.editble,
-          id: item.id,
+          idx: item.idx,
           label: item.label,
           sectionName: item.sectionName
         })
@@ -70,6 +70,7 @@ export default {
       this.copyArray(brother.children, temp.children)
     },
     append (node, data) {
+      console.log(node, data)
       data.editble = true
       const section = data.children.findIndex(d => d.label === data.sectionName)
       if (section !== -1) {
@@ -79,37 +80,40 @@ export default {
       if (data.sectionName === '') {
         data.btnAdd = '保存'
       } else {
-        const newChild = { id: data.children.length, editble: false, sectionName: '', btnAdd: '添加', btnRename: '重命名', label: data.sectionName, children: [] }
+        const newChild = { idx: data.children.length, editble: false, sectionName: '', btnAdd: '添加', btnRename: '重命名', label: data.sectionName, children: [] }
         if (!data.children) {
           this.$set(data, 'children', [])
+        }
+        var parent = null
+        if (node.level > 1) {
+          parent = data
         }
         data.children.push(newChild)
         data.editble = false
         data.sectionName = ''
         data.btnAdd = '添加'
         data.btnRename = '重命名'
-        console.log('this.treeData[0].children ',this.treeData[0].children)
-        fetch(URL + 'kevin/section.api', this.onAddComplate, 'POST', this.treeData[0].children)
+        fetch(URL + 'kevin/section.api', this.onAddComplate, 'POST', {parent: parent, children: newChild})
       }
     },
     // 补全前端自用属性
-    // localAttr (arr) {
-    //   for (let i = 0; i < arr.length; i++) {
-    //     arr[i].editble = false
-    //     arr[i].sectionName = ''
-    //     arr[i].btnAdd = '添加'
-    //     arr[i].btnRename = '重命名'
-    //     if (arr[i].children) {
-    //       this.localAttr(arr[i].children)
-    //     } else {
-    //       arr[i].children = []
-    //     }
-    //     console.log(arr)
-    //   }
-    // },
+    localAttr (arr) {
+      for (let i = 0; i < arr.length; i++) {
+        arr[i].editble = false
+        arr[i].sectionName = ''
+        arr[i].btnAdd = '添加'
+        arr[i].btnRename = '重命名'
+        if (arr[i].children) {
+          this.localAttr(arr[i].children)
+        } else {
+          arr[i].children = []
+        }
+        console.log(arr)
+      }
+    },
     onInitComplate (data) {
       console.log('链接了...', data)
-      // this.localAttr(data.entity)
+      this.localAttr(data.entity)
       for (let i = 0; i < data.entity.length; i++) {
         this.treeData[0].children.push(data.entity[i])
       }
@@ -136,8 +140,9 @@ export default {
       console.log('post', data)
     },
     remove (node, data) {
+      console.log(node, data)
       const treeDate = node.parent.data.children
-      const index = treeDate.findIndex(d => d.id === data.id)
+      const index = treeDate.findIndex(d => d.idx === data.idx)
       if (data.children && data.children.length !== 0) {
         this.$message.error('该目录不为空，不能删除！')
       } else {
@@ -147,7 +152,11 @@ export default {
           type: 'warning'
         }).then(() => {
           treeDate.splice(index, 1)
-          fetch(URL + 'kevin/section.api', this.onRemoveComplate, 'DELETE', this.treeData[0].children)
+          var parent = null
+          if (node.level > 2) {
+            parent = node.parent.data
+          }
+          fetch(URL + 'kevin/section.api', this.onRemoveComplate, 'DELETE', {parent: parent, children: data})
         }).catch(() => {
           this.$message({
             type: 'info',
@@ -158,8 +167,8 @@ export default {
     },
     upMove (node, data) {
       const parent = node.parent.data.children
-      const index = parent.findIndex(d => d.id === data.id)
-      if (data.id === parent[0].id) {
+      const index = parent.findIndex(d => d.idx === data.idx)
+      if (data.idx === parent[0].idx) {
         this.$message.error('分类已处于首位！')
       } else {
         this.changeTree(parent[index], parent[index - 1])
@@ -168,8 +177,8 @@ export default {
     },
     downMove (node, data) {
       const parent = node.parent.data.children
-      const index = parent.findIndex(d => d.id === data.id)
-      if (data.id === parent[parent.length - 1].id) {
+      const index = parent.findIndex(d => d.idx === data.idx)
+      if (data.idx === parent[parent.length - 1].idx) {
         this.$message.error('分类已处于末位！')
       } else {
         this.changeTree(parent[index], parent[index + 1])

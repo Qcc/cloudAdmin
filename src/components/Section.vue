@@ -80,20 +80,30 @@ export default {
       if (data.sectionName === '') {
         data.btnAdd = '保存'
       } else {
-        const newChild = { idx: data.children.length, editble: false, sectionName: '', btnAdd: '添加', btnRename: '重命名', label: data.sectionName, children: [] }
+        var newChild = {
+          idx: data.children.length,
+          level: data.children.length,
+          editble: false,
+          sectionName: '',
+          btnAdd: '添加',
+          btnRename: '重命名',
+          label: data.sectionName,
+          children: []
+        }
         if (!data.children) {
           this.$set(data, 'children', [])
-        }
-        var parent = null
-        if (node.level > 1) {
-          parent = data
         }
         data.children.push(newChild)
         data.editble = false
         data.sectionName = ''
         data.btnAdd = '添加'
         data.btnRename = '重命名'
-        fetch(URL + 'kevin/section.api', this.onAddComplate, 'POST', {parent: parent, children: newChild})
+        newChild.parent = null
+        if (node.level > 1) {
+          newChild.parent = {label: data.label, idx: data.idx, level: data.level}
+        }
+        fetch(URL + 'kevin/section.api', this.onAddComplate, 'POST',
+        {label: newChild.label, idx: newChild.idx, level: newChild.level, parent: newChild.parent})
       }
     },
     // 补全前端自用属性
@@ -152,11 +162,9 @@ export default {
           type: 'warning'
         }).then(() => {
           treeDate.splice(index, 1)
-          var parent = null
-          if (node.level > 2) {
-            parent = node.parent.data
-          }
-          fetch(URL + 'kevin/section.api', this.onRemoveComplate, 'DELETE', {parent: parent, children: data})
+          fetch(URL + 'kevin/section.api', this.onRemoveComplate, 'DELETE', {
+            label: data.label, idx: data.idx, level: data.level
+          })
         }).catch(() => {
           this.$message({
             type: 'info',
@@ -171,8 +179,11 @@ export default {
       if (data.idx === parent[0].idx) {
         this.$message.error('分类已处于首位！')
       } else {
+        var target = parent[index]
+        var source = parent[index - 1]
         this.changeTree(parent[index], parent[index - 1])
-        fetch(URL + 'kevin/section.api', this.onUpmoveComplate, 'PUT', this.treeData[0].children)
+        fetch(URL + 'kevin/section.api', this.onUpmoveComplate, 'PUT',
+        {source: source, target: target})
       }
     },
     downMove (node, data) {
@@ -181,8 +192,11 @@ export default {
       if (data.idx === parent[parent.length - 1].idx) {
         this.$message.error('分类已处于末位！')
       } else {
+        var target = parent[index]
+        var source = parent[index + 1]
         this.changeTree(parent[index], parent[index + 1])
-        fetch(URL + 'kevin/section.api', this.onDownmoveComplate, 'PUT', this.treeData[0].children)
+        fetch(URL + 'kevin/section.api', this.onDownmoveComplate, 'PUT',
+        {source: source, target: target})
       }
     },
     reName (node, data) {
@@ -196,12 +210,13 @@ export default {
       if (data.sectionName === '') {
         data.btnRename = '保存'
       } else {
+        fetch(URL + 'kevin/section.api', this.onRenameComplate, 'PUT',
+        {idx: data.idx, label: data.label, level: data.level, sectionName: data.sectionName})
         data.label = data.sectionName
         data.editble = false
         data.sectionName = ''
         data.btnRename = '重命名'
         data.btnAdd = '添加'
-        fetch(URL + 'kevin/section.api', this.onRenameComplate, 'PUT', this.treeData[0].children)
       }
     },
     renderContent (h, { node, data, store }) {

@@ -34,14 +34,18 @@ export default {
         btnAdd: '添加',
         btnRename: '重命名',
         children: []
-      }]
+      }],
+      currentNode: null
     }
   },
   mounted: function () {
-    console.log('组件安装完成')
-    fetch(URL + 'kevin/section.api', this.onInitComplate, 'GET')
+    this.initData()
   },
   methods: {
+    initData () {
+      console.log('获取数据...')
+      fetch(URL + 'kevin/section.api', this.onInitComplate, 'GET')
+    },
     copyArray (target, source) {
       source.forEach(function (item) {
         target.push({
@@ -100,10 +104,11 @@ export default {
         data.btnRename = '重命名'
         newChild.parent = null
         if (node.level > 1) {
-          newChild.parent = {label: data.label, idx: data.idx, level: data.level}
+          newChild.parent = {label: data.label, level: data.level, parentId: data._id}
         }
+        this.currentNode = data.children[data.children.length - 1]
         fetch(URL + 'kevin/section.api', this.onAddComplate, 'POST',
-        {label: newChild.label, idx: newChild.idx, level: newChild.level, parent: newChild.parent})
+        {label: newChild.label, level: newChild.level, parent: newChild.parent})
       }
     },
     // 补全前端自用属性
@@ -113,41 +118,84 @@ export default {
         arr[i].sectionName = ''
         arr[i].btnAdd = '添加'
         arr[i].btnRename = '重命名'
-        if (arr[i].children) {
-          this.localAttr(arr[i].children)
-        } else {
-          arr[i].children = []
-        }
+        arr[i].children = []
         console.log(arr)
       }
     },
     onInitComplate (data) {
       console.log('链接了...', data)
       this.localAttr(data.entity)
-      for (let i = 0; i < data.entity.length; i++) {
-        this.treeData[0].children.push(data.entity[i])
+      var tree = data.entity.sort(function (a, b) {
+        return a.level - b.level
+      })
+      while (tree.length !== 0) {
+        for (let i = 0; i < tree.length; i++) {
+          console.log('i ', i)
+          if (tree[i].parent === null) {
+            this.treeData[0].children.push(tree[i])
+            tree.splice(i, 1)
+            i-- // 删除元素后导致循环跳过某些元素 --补偿
+          }
+        }
+        for (let i = 0; i < tree.length; i++) {
+          for (let j = 0; j < this.treeData[0].children.length; j++) {
+            if (tree[i].parent.parentId === this.treeData[0].children[j]._id) {
+              this.treeData[0].children[j].children.push(tree[i])
+              tree.splice(i, 1)
+              if (tree.length === 0) {
+                break
+              }
+            }
+          }
+        }
+      }
+      // for (let i = 0; i < tree.length; i++) {
+      //   console.log('tree.level ', tree[i].level)
+      //   if (tree[i].parent === null) {
+      //     this.treeData[0].children.push(tree[i])
+      //   } else {
+      //     for (let j = 0; j < this.treeData[0].children.length; j++) {
+      //       if (tree[i].parent.parentId === this.treeData[0].children[j]._id) {
+      //         this.treeData[0].children[j].children.push(tree[i])
+      //       }
+      //     }
+      //   }
+      // }
+    },
+    activeDate (data) {
+      if (data.status !== 200) {
+        this.$message({
+          type: 'error',
+          message: '操作失败，获取数据失败'
+        })
+        console.log('post', data)
+        this.treeData[0].children = []
+        this.initData()
       }
     },
     onAddComplate (data) {
-      console.log('post', data)
+      if (data.status === 200) {
+        this.$set(this.currentNode, '_id', data.entity._id)
+      }
+      this.activeDate(data)
     },
     onDeleteComplate (data) {
-      console.log('post', data)
+      this.activeDate(data)
     },
     onUpdateComplate (data) {
-      console.log('post', data)
+      this.activeDate(data)
     },
     onRemoveComplate (data) {
-      console.log('post', data)
+      this.activeDate(data)
     },
     onUpmoveComplate (data) {
-      console.log('post', data)
+      this.activeDate(data)
     },
     onDownmoveComplate (data) {
-      console.log('post', data)
+      this.activeDate(data)
     },
     onRenameComplate (data) {
-      console.log('post', data)
+      this.activeDate(data)
     },
     remove (node, data) {
       console.log(node, data)
@@ -162,9 +210,7 @@ export default {
           type: 'warning'
         }).then(() => {
           treeDate.splice(index, 1)
-          fetch(URL + 'kevin/section.api', this.onRemoveComplate, 'DELETE', {
-            label: data.label, idx: data.idx, level: data.level
-          })
+          fetch(URL + 'kevin/section.api', this.onRemoveComplate, 'DELETE', {_id: data._id})
         }).catch(() => {
           this.$message({
             type: 'info',
@@ -183,7 +229,7 @@ export default {
         var source = parent[index - 1]
         this.changeTree(parent[index], parent[index - 1])
         fetch(URL + 'kevin/section.api', this.onUpmoveComplate, 'PUT',
-        {source: source, target: target})
+        {source: {_id: source._id, level: source.level}, target: {_id: target._id, level: target.level}})
       }
     },
     downMove (node, data) {
@@ -196,7 +242,7 @@ export default {
         var source = parent[index + 1]
         this.changeTree(parent[index], parent[index + 1])
         fetch(URL + 'kevin/section.api', this.onDownmoveComplate, 'PUT',
-        {source: source, target: target})
+        {source: {_id: source._id, level: source.level}, target: {_id: target._id, level: target.level}})
       }
     },
     reName (node, data) {
@@ -211,7 +257,7 @@ export default {
         data.btnRename = '保存'
       } else {
         fetch(URL + 'kevin/section.api', this.onRenameComplate, 'PUT',
-        {idx: data.idx, label: data.label, level: data.level, sectionName: data.sectionName})
+        {_id: data._id, sectionName: data.sectionName})
         data.label = data.sectionName
         data.editble = false
         data.sectionName = ''

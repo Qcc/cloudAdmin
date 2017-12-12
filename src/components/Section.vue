@@ -4,7 +4,6 @@
     <el-tree
       :props="defaultProps"
       show-checkbox
-      node-key="idx"
       :data="treeData"
       default-expand-all
       :expand-on-click-node="false"
@@ -27,7 +26,7 @@ export default {
         btnRename: '重命名' // 重命名按钮
       },
       treeData: [{
-        idx: 0,
+        // idx: 0,
         label: '网站',
         editble: false,
         sectionName: '',
@@ -53,7 +52,8 @@ export default {
           btnRename: item.btnRename,
           children: item.children,
           editble: item.editble,
-          idx: item.idx,
+          _id: item._id,
+          level: item.level,
           label: item.label,
           sectionName: item.sectionName
         })
@@ -64,12 +64,18 @@ export default {
       var temp = {}
       var temp1 = {}
       temp.label = current.label
+      temp._id = current._id
+      temp.level = current.level
       temp.children = current.children.concat()
       temp1.children = brother.children.concat()
       current.label = brother.label
+      current.level = brother.level
+      current._id = brother._id
       current.children = []
       this.copyArray(current.children, temp1.children)
       brother.label = temp.label
+      brother._id = temp._id
+      brother.level = temp.level
       brother.children = []
       this.copyArray(brother.children, temp.children)
     },
@@ -85,7 +91,7 @@ export default {
         data.btnAdd = '保存'
       } else {
         var newChild = {
-          idx: data.children.length,
+          // idx: data.children.length,
           level: data.children.length,
           editble: false,
           sectionName: '',
@@ -119,7 +125,6 @@ export default {
         arr[i].btnAdd = '添加'
         arr[i].btnRename = '重命名'
         arr[i].children = []
-        console.log(arr)
       }
     },
     onInitComplate (data) {
@@ -128,39 +133,25 @@ export default {
       var tree = data.entity.sort(function (a, b) {
         return a.level - b.level
       })
-      while (tree.length !== 0) {
-        for (let i = 0; i < tree.length; i++) {
-          console.log('i ', i)
-          if (tree[i].parent === null) {
-            this.treeData[0].children.push(tree[i])
-            tree.splice(i, 1)
-            i-- // 删除元素后导致循环跳过某些元素 --补偿
-          }
+      for (let i = 0; i < tree.length; i++) {
+        if (tree[i].parent === null) {
+          this.treeData[0].children.push(tree[i])
+          tree.splice(i, 1)
+          i-- // 删除元素后导致循环跳过某些元素 --补偿
         }
-        for (let i = 0; i < tree.length; i++) {
-          for (let j = 0; j < this.treeData[0].children.length; j++) {
-            if (tree[i].parent.parentId === this.treeData[0].children[j]._id) {
-              this.treeData[0].children[j].children.push(tree[i])
-              tree.splice(i, 1)
-              if (tree.length === 0) {
-                break
-              }
-            }
+      }
+      for (let j = 0; j < tree.length; j++) {
+        console.log(111)
+        for (let k = 0; k < this.treeData[0].children.length; k++) {
+          console.log(22)
+          if (tree[j].parent.parentId === this.treeData[0].children[k]._id) {
+            this.treeData[0].children[k].children.push(tree[j])
+            tree.splice(j, 1)
+            j--
+            break
           }
         }
       }
-      // for (let i = 0; i < tree.length; i++) {
-      //   console.log('tree.level ', tree[i].level)
-      //   if (tree[i].parent === null) {
-      //     this.treeData[0].children.push(tree[i])
-      //   } else {
-      //     for (let j = 0; j < this.treeData[0].children.length; j++) {
-      //       if (tree[i].parent.parentId === this.treeData[0].children[j]._id) {
-      //         this.treeData[0].children[j].children.push(tree[i])
-      //       }
-      //     }
-      //   }
-      // }
     },
     activeDate (data) {
       if (data.status !== 200) {
@@ -168,7 +159,6 @@ export default {
           type: 'error',
           message: '操作失败，获取数据失败'
         })
-        console.log('post', data)
         this.treeData[0].children = []
         this.initData()
       }
@@ -200,7 +190,7 @@ export default {
     remove (node, data) {
       console.log(node, data)
       const treeDate = node.parent.data.children
-      const index = treeDate.findIndex(d => d.idx === data.idx)
+      const index = treeDate.findIndex(d => d._id === data._id)
       if (data.children && data.children.length !== 0) {
         this.$message.error('该目录不为空，不能删除！')
       } else {
@@ -221,8 +211,8 @@ export default {
     },
     upMove (node, data) {
       const parent = node.parent.data.children
-      const index = parent.findIndex(d => d.idx === data.idx)
-      if (data.idx === parent[0].idx) {
+      const index = parent.findIndex(d => d._id === data._id)
+      if (data._id === parent[0]._id) {
         this.$message.error('分类已处于首位！')
       } else {
         var target = parent[index]
@@ -234,8 +224,8 @@ export default {
     },
     downMove (node, data) {
       const parent = node.parent.data.children
-      const index = parent.findIndex(d => d.idx === data.idx)
-      if (data.idx === parent[parent.length - 1].idx) {
+      const index = parent.findIndex(d => d._id === data._id)
+      if (data._id === parent[parent.length - 1]._id) {
         this.$message.error('分类已处于末位！')
       } else {
         var target = parent[index]

@@ -20,16 +20,26 @@ export default {
       defaultProps: {
         children: 'children',
         label: 'label',
-        editble: false, // 控制input框是否显示
+        addble: false, // 添加新目录input
+        editble: false, // 重命名目录input
         sectionName: '', // 添加,重命名input字段
+        sectionPath: '', // 添加重命名 路径字段
+        sectionType: 'article',
+        path: '',
+        type: '',
         btnAdd: '添加', // 添加按钮
         btnRename: '重命名' // 重命名按钮
       },
       treeData: [{
         // idx: 0,
         label: '网站',
-        editble: false,
+        path: 'root',
+        addble: false,
+        editble: false, // 重命名目录input
         sectionName: '',
+        sectionType: '',
+        type: 'article',
+        sectionPath: '', // 添加重命名 路径字段
         btnAdd: '添加',
         btnRename: '重命名',
         children: []
@@ -51,11 +61,16 @@ export default {
           btnAdd: item.btnAdd,
           btnRename: item.btnRename,
           children: item.children,
+          addble: item.addble,
           editble: item.editble,
           _id: item._id,
+          path: item.path,
+          type: item.type,
           level: item.level,
           label: item.label,
-          sectionName: item.sectionName
+          sectionName: item.sectionName,
+          sectionType: item.sectionType,
+          sectionPath: item.sectionPath
         })
       })
     },
@@ -65,63 +80,90 @@ export default {
       var temp1 = {}
       temp.label = current.label
       temp._id = current._id
+      temp.path = current.path
+      temp.type = current.type
+      temp.editble = current.editble
       temp.level = current.level
       temp.children = current.children.concat()
       temp1.children = brother.children.concat()
       current.label = brother.label
       current.level = brother.level
       current._id = brother._id
+      current.path = brother.path
+      current.type = brother.type
+      current.editble = brother.editble
       current.children = []
       this.copyArray(current.children, temp1.children)
       brother.label = temp.label
       brother._id = temp._id
+      brother.path = temp.path
+      brother.type = temp.type
+      brother.editble = temp.editble
       brother.level = temp.level
       brother.children = []
       this.copyArray(brother.children, temp.children)
     },
     append (node, data) {
-      console.log(node, data)
-      data.editble = true
-      const section = data.children.findIndex(d => d.label === data.sectionName)
-      if (section !== -1) {
-        this.$message.error('分类已存在,请重新输入！')
+      if (!data.addble) {
+        data.addble = true
+        data.editble = false
+        data.sectionPath = ''
+        data.sectionType = data.type
+        data.sectionName = ''
+        data.btnAdd = '保存'
+        data.btnRename = '重命名'
         return
       }
-      if (data.sectionName === '') {
-        data.btnAdd = '保存'
-      } else {
-        var newChild = {
-          // idx: data.children.length,
-          level: data.children.length,
-          editble: false,
-          sectionName: '',
-          btnAdd: '添加',
-          btnRename: '重命名',
-          label: data.sectionName,
-          children: []
-        }
-        if (!data.children) {
-          this.$set(data, 'children', [])
-        }
-        data.children.push(newChild)
-        data.editble = false
-        data.sectionName = ''
-        data.btnAdd = '添加'
-        data.btnRename = '重命名'
-        newChild.parent = null
-        if (node.level > 1) {
-          newChild.parent = {label: data.label, level: data.level, parentId: data._id}
-        }
-        this.currentNode = data.children[data.children.length - 1]
-        fetch(URL + 'kevin/section.api', this.onAddComplate, 'POST',
-        {label: newChild.label, level: newChild.level, parent: newChild.parent})
+      const section = data.children.findIndex(d => d.label === data.sectionName)
+      const path = data.children.findIndex(d => d.label === data.sectionPath)
+      if (section !== -1 || path !== -1) {
+        this.$message.error('分类或路径已存在,请重新输入！')
+        return
       }
+      if (data.sectionName === '' || data.sectionPath === '') {
+        this.$message.error('分类或路径不能为空,请重新输入！')
+        return
+      }
+      var newChild = {
+        level: data.children.length,
+        addble: false,
+        editble: false,
+        sectionName: '',
+        sectionPath: '',
+        btnAdd: '添加',
+        btnRename: '重命名',
+        path: data.sectionPath,
+        label: data.sectionName,
+        type: data.sectionType,
+        children: []
+      }
+      if (!data.children) {
+        this.$set(data, 'children', [])
+      }
+      data.children.push(newChild)
+      data.addble = false
+      data.editble = false
+      data.sectionName = ''
+      data.sectionPath = ''
+      data.sectionType = 'article'
+      data.btnAdd = '添加'
+      data.btnRename = '重命名'
+      newChild.parent = null
+      if (node.level > 1) {
+        newChild.parent = data._id
+      }
+      this.currentNode = data.children[data.children.length - 1]
+      fetch(URL + 'kevin/section.api', this.onAddComplate, 'POST',
+      {label: newChild.label, level: newChild.level, type: newChild.type, path: newChild.path, parent: newChild.parent})
     },
     // 补全前端自用属性
     localAttr (arr) {
       for (let i = 0; i < arr.length; i++) {
+        arr[i].addble = false
         arr[i].editble = false
         arr[i].sectionName = ''
+        arr[i].sectionPath = ''
+        arr[i].sectionType = 'article'
         arr[i].btnAdd = '添加'
         arr[i].btnRename = '重命名'
         arr[i].children = []
@@ -141,10 +183,8 @@ export default {
         }
       }
       for (let j = 0; j < tree.length; j++) {
-        console.log(111)
         for (let k = 0; k < this.treeData[0].children.length; k++) {
-          console.log(22)
-          if (tree[j].parent.parentId === this.treeData[0].children[k]._id) {
+          if (tree[j].parent === this.treeData[0].children[k]._id) {
             this.treeData[0].children[k].children.push(tree[j])
             tree.splice(j, 1)
             j--
@@ -236,33 +276,66 @@ export default {
       }
     },
     reName (node, data) {
-      data.editble = true
-      const parent = node.parent.data.children
-      const section = parent.findIndex(d => d.label === data.sectionName)
-      if (section !== -1) {
-        this.$message.error('分类已存在,请重新输入！')
+      if (!data.editble) {
+        data.addble = false
+        data.editble = true
+        data.sectionPath = data.path
+        data.sectionType = data.type
+        data.sectionName = data.label
+        data.btnRename = '保存'
+        data.btnAdd = '添加'
         return
       }
-      if (data.sectionName === '') {
-        data.btnRename = '保存'
+      const parent = node.parent.data.children
+      const section = parent.filter(d => d.label === data.sectionName)
+      const path = parent.filter(d => d.path === data.sectionPath)
+      console.log('section ', section.length, ' path ', path.length)
+      if (section.length >= 1 || path.length >= 1) {
+        this.$message.error('分类或路径已存在,请重新输入！')
+        return
+      }
+      if (data.sectionName === '' || data.sectionPath === '') {
+        this.$message.error('分类或路径不能为空,请重新输入！')
       } else {
         fetch(URL + 'kevin/section.api', this.onRenameComplate, 'PUT',
-        {_id: data._id, sectionName: data.sectionName})
+        {_id: data._id, sectionType: data.sectionType, sectionName: data.sectionName, sectionPath: data.sectionPath})
         data.label = data.sectionName
+        data.path = data.sectionPath
+        data.type = data.sectionType
         data.editble = false
         data.sectionName = ''
+        data.sectionPath = ''
         data.btnRename = '重命名'
-        data.btnAdd = '添加'
       }
     },
     renderContent (h, { node, data, store }) {
       return (
         <span style="flex: 1; display: flex; align-items: center; justify-content: space-between; font-size: 14px; padding-right: 8px;">
-          <span>
-            <span>{node.label}</span>
+          <span >
+            <span v-show={data.type === 'article'} class='iconfont icon-wenzhang' style="margin-right:10px;"></span>
+            <span v-show={data.type === 'picture'} class='iconfont icon-picture' style="margin-right:10px;"></span>
+            <span v-show={data.type === 'video'} class='iconfont icon-shipin' style="margin-right:10px;"></span>
+            <span>{data.label} - /{data.path}</span>
           </span>
           <span>
-            {data.editble ? <el-input style="width:100px;padding-right: 8px;" maxlength={4} autofocus clearable size="mini" v-model={data.sectionName} placeholder="请输入类目"></el-input> : ''}
+            {data.addble ? <span>
+            <el-input placeholder="请输入内容" style="width:200px;padding-right: 2px;" maxlength={4} autofocus clearable size="mini" v-model={data.sectionName} >
+              <el-select style="width:70px;" v-model={data.sectionType} slot="prepend" placeholder="类型">
+                <el-option label="文章" default value="article"></el-option>
+                <el-option label="图片" value="picture"></el-option>
+                <el-option label="视频" value="video"></el-option>
+              </el-select>
+            </el-input>
+            <el-input style="width:100px;padding-right: 8px;" maxlength={40} autofocus clearable size="mini" v-model={data.sectionPath} placeholder="请输入路径"></el-input></span> : ''}
+            {data.editble ? <span>
+            <el-input placeholder="请输入内容" style="width:200px;padding-right: 2px;" maxlength={4} autofocus clearable size="mini" v-model={data.sectionName} >
+              <el-select style="width:70px;" v-model={data.sectionType} slot="prepend" placeholder="类型">
+                <el-option label="文章" default value="article"></el-option>
+                <el-option label="图片" value="picture"></el-option>
+                <el-option label="视频" value="video"></el-option>
+              </el-select>
+            </el-input>
+            <el-input style="width:100px;padding-right: 8px;" maxlength={40} autofocus clearable size="mini" v-model={data.sectionPath} placeholder="请输入路径"></el-input></span> : ''}
             <el-button style="font-size: 12px;" type="text" v-show={!node.isLeaf || node.level < 3} on-click={ () => this.append(node, data) }>{data.btnAdd}</el-button>
             <el-button style="font-size: 12px;" type="text" v-show={node.level > 1} on-click={ () => this.upMove(node, data) }>上移</el-button>
             <el-button style="font-size: 12px;" type="text" v-show={node.level > 1} on-click={ () => this.downMove(node, data) }>下移</el-button>

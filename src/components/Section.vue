@@ -115,7 +115,7 @@ export default {
         return
       }
       const section = data.children.findIndex(d => d.label === data.sectionName)
-      const path = data.children.findIndex(d => d.label === data.sectionPath)
+      const path = data.children.findIndex(d => d.path === data.sectionPath)
       if (section !== -1 || path !== -1) {
         this.$message.error('分类或路径已存在,请重新输入！')
         return
@@ -234,7 +234,7 @@ export default {
       if (data.children && data.children.length !== 0) {
         this.$message.error('该目录不为空，不能删除！')
       } else {
-        this.$confirm('您确认要删除该目录吗?', '提示', {
+        this.$confirm('您确认要删除 [ ' + data.label + ' ] 目录吗?', '提示', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning'

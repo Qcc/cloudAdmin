@@ -1,14 +1,16 @@
 <template>
   <el-col :span="20">
     <h1>PushArticle</h1>
+    <VueUeditor ></VueUeditor>
+  </div>
   </el-col>
 </template>
 <script>
+import VueUeditor from './UMEditor.vue'
 export default {
-  name: 'PushArticle',
+  components: {VueUeditor},
   data () {
     return {
-      msg: 'sdfsdf'
     }
   }
 }

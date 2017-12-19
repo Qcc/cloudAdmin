@@ -1,64 +1,39 @@
 <template>
-  <div ref="editor"></div>
+  <div>
+    <script id="editor" type="text/plain"></script>
+  </div>
 </template>
-
 <script>
-  /* eslint-disable */
-  import '../../static/umeditor1_2_3/third-party/jquery.min.js'
-  import '../../static/umeditor1_2_3/umeditor.config.js'
-  import '../../static/umeditor1_2_3/umeditor.min.js'
-  import '../../static/umeditor1_2_3/lang/zh-cn/zh-cn.js'
-
   export default {
-    data() {
+    name: 'UE',
+    data () {
       return {
-        ueditorId: 'ueditorId' + Math.round() * 10000000,
+        editor: null
+        // editorId: Math.random() * 10000000000000000
       }
     },
     props: {
-      value: {
-        type: String,
-        default: null,
+      defaultMsg: {
+        type: String
       },
       config: {
-        type: Object,
-        default: {},
+        type: Object
       }
     },
-    watch: {
-      value: function value(val, oldVal) {
-        this.editor = UE.getEditor(this.ueditorId, this.config)
-        if (val !== null) {
-          this.editor.setContent(val)
-        }
-      },
-    },
-    mounted() {
-      this.$nextTick(function f1() {
-        // 保证 this.$el 已经插入文档
-        console.log('jquery',jquery)
-        this.$refs.editor.ueditorId = this.ueditorId
-        this.editor = UM.getEditor(this.ueditorId, this.config)
-
-        this.editor.ready(function f2() {
-          this.editor.setContent(this.value)
-
-          this.editor.addListener("contentChange", function () {
-            const wordCount = this.editor.getContentLength(true)
-            const content = this.editor.getContent()
-            const plainTxt = this.editor.getPlainTxt()
-            this.$emit('input', { wordCount: wordCount, content: content, plainTxt: plainTxt })
-          }.bind(this))
-
-          this.$emit('ready', this.editor)
-        }.bind(this))
+    mounted () {
+      const _this = this
+      this.editor = window.UM.getEditor('editor', this.config) // 初始化UE
+      this.editor.addListener('ready', function () {
+        _this.editor.setContent(_this.defaultMsg) // 确保UE加载完成后，放入内容。
       })
     },
+    methods: {
+      getUMCTX () { // 获取内容方法
+        return this.editor
+      }
+    },
+    destroyed () {
+      this.editor.destroy()
+    }
   }
 </script>
-
-<style>
-    body{
-        background-color:#ff0000
-    }
-</style>

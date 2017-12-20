@@ -1,9 +1,28 @@
 <template>
   <el-col :span="20">
-    <h1>发布文章</h1>
-    <div class="edit-area">
-      <UmEditor v-bind:defaultMsg="defaultMsg" v-bind:config="config" ref="um"></UmEditor>
-    </div>
+    <el-form ref="form" :model="article" size="mini" label-width="55px">
+      <el-form-item label="标题">
+        <el-input v-model="article.title"></el-input>
+      </el-form-item>
+      <el-form-item label="分类">
+        <el-select v-model="article.category" placeholder="请选择分类">
+          <el-option label="区域一" value="shanghai"></el-option>
+          <el-option label="区域二" value="beijing"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="关键字">
+        <el-input v-model="article.keyword"></el-input>    
+      </el-form-item>
+      <el-form-item label="概要">
+        <el-input v-model="article.summary"></el-input>    
+      </el-form-item> 
+      <el-form-item>
+        <UmEditor v-bind:defaultMsg="defaultMsg" v-bind:config="config" ref="um"></UmEditor>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="onSubmit">立即创建</el-button>
+      </el-form-item>
+    </el-form>
     <button @click="getUEContent">获取内容</button>
     <button @click="getContentTxt">获得纯文本</button>
     <button @click="getPlainTxt">获得带格式的纯文本</button>&nbsp;
@@ -24,7 +43,14 @@ export default {
         initialFrameWidth: null,
         initialFrameHeight: 320
       },
-      ctx: null
+      ctx: null,
+      article: {
+        title: '',
+        category: null,
+        keyword: '',
+        summary: '',
+        text: ''
+      }
     }
   },
   mounted: function () {

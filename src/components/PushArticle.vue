@@ -1,26 +1,28 @@
 <template>
   <el-col :span="20">
-    <el-form ref="form" :model="article" size="mini" label-width="55px">
-      <el-form-item label="标题">
+    <el-form :model="article" :rules="rules" ref="sendArticleForm" size="mini" label-width="65px">
+      <el-form-item label="标题" prop="title">
         <el-input v-model="article.title"></el-input>
       </el-form-item>
-      <el-form-item label="分类">
+      <el-form-item label="分类" prop="category">
         <el-select v-model="article.category" placeholder="请选择分类">
-          <el-option label="区域一" value="shanghai"></el-option>
-          <el-option label="区域二" value="beijing"></el-option>
+          <el-option v-for="item in category" :key="item._id" v-if="item.type === 'article'" :label="item.label" :value="item.path">
+            <span style="float: left">{{ item.label }}</span>
+            <span style="float: right; color: #8492a6; font-size: 13px">/{{ item.path }}</span>
+          </el-option>
         </el-select>
       </el-form-item>
-      <el-form-item label="关键字">
-        <el-input v-model="article.keyword"></el-input>    
+      <el-form-item label="关键字" prop="keyword">
+        <el-input v-model="article.keyword"></el-input>
       </el-form-item>
-      <el-form-item label="概要">
+      <el-form-item label="概要" prop="summary">
         <el-input v-model="article.summary"></el-input>    
       </el-form-item> 
-      <el-form-item>
+      <el-form-item prop="text">
         <UmEditor v-bind:defaultMsg="defaultMsg" v-bind:config="config" ref="um"></UmEditor>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="onSubmit">立即创建</el-button>
+        <el-button type="primary" @click="onSubmit('sendArticleForm')">立即创建</el-button>
       </el-form-item>
     </el-form>
     <button @click="getUEContent">获取内容</button>
@@ -32,6 +34,7 @@
 </template>
 <script>
 import UmEditor from './UMEditor'
+import {fetch, URL} from '../utils/connect.js'
 export default {
   components: {
     UmEditor
@@ -46,17 +49,60 @@ export default {
       ctx: null,
       article: {
         title: '',
-        category: null,
+        category: '',
         keyword: '',
         summary: '',
         text: ''
+      },
+      category: [],
+      rules: {
+        title: [
+          { required: true, message: '请输入标题', trigger: 'blur' },
+          { min: 1, max: 5, message: '长度不能超过5个字符', trigger: 'change' }
+        ],
+        category: [
+          { required: true, message: '请选择分类', trigger: 'blur' }
+        ],
+        keyword: [
+          { required: true, message: '请输入关键词', trigger: 'blur' },
+          { min: 1, max: 5, message: '长度不能超过5个字符', trigger: 'change' }
+        ],
+        summary: [
+          { required: true, message: '请输入概要', trigger: 'blur' },
+          { min: 1, max: 5, message: '长度不能超过5个字符', trigger: 'change' }
+        ],
+        text: [
+          { required: true, message: '请输入正文', trigger: 'blur' },
+          { min: 1, max: 20000, message: '长度不能超过5个字符', trigger: 'change' }
+        ]
       }
     }
   },
   mounted: function () {
     this.ctx = this.$refs.um.getUMCTX()
+    this.initData()
   },
   methods: {
+    initData () {
+      console.log('获取数据...')
+      fetch(URL + 'kevin/section.api', this.onInitComplate, 'GET')
+    },
+    onInitComplate (data) {
+      console.log('链接了...', data)
+      this.category = data.entity
+    },
+    onSubmit (formName) {
+      this.article.text = this.ctx.getContent()
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          alert('submit!')
+          console.log('submit: ', this.article)
+        } else {
+          console.log('error submit!!')
+          return false
+        }
+      })
+    },
     getHtmlContentLength () {
       let content = this.ctx.getContentLength()
       console.log(content)

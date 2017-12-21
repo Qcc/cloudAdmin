@@ -10,19 +10,19 @@
     <!-- 配置文件 -->
     <script type="text/javascript" src="/static/umeditor1_2_2/umeditor.config.js"></script>
     <!-- 编辑器源码文件 -->
-    <script type="text/javascript" src="/static/umeditor1_2_2/umeditor.min.js"></script>
+    <script type="text/javascript" src="/static/umeditor1_2_2/umeditor.js"></script>
     <!-- 语言包文件 -->
     <script type="text/javascript" src="/static/umeditor1_2_2/lang/zh-cn/zh-cn.js"></script>
     <!-- 实例化编辑器代码 -->
     <script type="text/javascript">
       var serverPath =  window.UMEDITOR_HOME_URL;
       $(function(){
-          window.um = UM.getEditor('container', {
-            imageUrl:serverPath + "imageUp.php",
-            imagePath:serverPath,
-            lang:/^zh/.test(navigator.language || navigator.browserLanguage || navigator.userLanguage) ? 'zh-cn' : 'en',
-            langPath:UMEDITOR_CONFIG.UMEDITOR_HOME_URL + "lang/",
-            focus: true
+        window.um = UM.getEditor('container', {
+          imageUrl:serverPath + "imageUp.php",
+          imagePath:serverPath,
+          lang:/^zh/.test(navigator.language || navigator.browserLanguage || navigator.userLanguage) ? 'zh-cn' : 'en',
+          langPath:UMEDITOR_CONFIG.UMEDITOR_HOME_URL + "lang/",
+          focus: true
         });
       });
     </script> 

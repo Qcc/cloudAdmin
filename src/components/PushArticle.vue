@@ -65,15 +65,15 @@ export default {
         ],
         keyword: [
           { required: true, message: '请输入关键词', trigger: 'blur' },
-          { min: 1, max: 5, message: '长度不能超过5个字符', trigger: 'change' }
+          { min: 1, max: 100, message: '长度不能超过100个字符', trigger: 'change' }
         ],
         summary: [
           { required: true, message: '请输入概要', trigger: 'blur' },
-          { min: 1, max: 5, message: '长度不能超过5个字符', trigger: 'change' }
+          { min: 1, max: 200, message: '长度不能超过200个字符', trigger: 'change' }
         ],
         text: [
           { required: true, message: '请输入正文', trigger: 'blur' },
-          { min: 1, max: 20000, message: '长度不能超过5个字符', trigger: 'change' }
+          { min: 1, max: 30000, message: '长度不能超过30000个字符', trigger: 'change' }
         ]
       }
     }
@@ -95,13 +95,24 @@ export default {
       this.article.text = this.ctx.getContent()
       this.$refs[formName].validate((valid) => {
         if (valid) {
-          alert('submit!')
+          fetch(URL + 'kevin/article.api', this.onSubmitComplate, 'POST')
           console.log('submit: ', this.article)
-        } else {
-          console.log('error submit!!')
-          return false
         }
       })
+    },
+    onSubmitComplate (data) {
+      if (data.status === 200) {
+        this.$message({
+          type: 'success',
+          message: '文章已发布可以在首页查看。'
+        })
+        // this.$refs['sendArticleForm'].resetFields()
+      } else {
+        this.$message({
+          type: 'error',
+          message: '出现错误，文章未发布。'
+        })
+      }
     },
     getHtmlContentLength () {
       let content = this.ctx.getContentLength()

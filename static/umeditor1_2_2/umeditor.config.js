@@ -135,10 +135,14 @@
         //为编辑器实例添加一个路径，这个不能被注释
         UMEDITOR_HOME_URL : URL
 
+        // 图片上传配置区
+        // ,imageUrl:URL+"php/imageUp.php"             //图片上传提交地址
+        // ,imagePath:URL + "php/"                     //图片修正地址，引用了fixedImagePath,如有特殊需求，可自行配置
+        // ,imageFieldName:"upfile"                   //图片数据的key,若此处修改，需要在后台对应文件修改对应参数
         //图片上传配置区
-        ,imageUrl:URL+"php/imageUp.php"             //图片上传提交地址
-        ,imagePath:URL + "php/"                     //图片修正地址，引用了fixedImagePath,如有特殊需求，可自行配置
-        ,imageFieldName:"upfile"                   //图片数据的key,若此处修改，需要在后台对应文件修改对应参数
+        ,imageUrl: 'http://127.0.0.1:3001/kevin/upload.api'             //图片上传提交地址
+        ,imagePath: '/'                     //图片修正地址，引用了fixedImagePath,如有特殊需求，可自行配置
+        ,imageFieldName: "kevinFile"                   //图片数据的key,若此处修改，需要在后台对应文件修改对应参数
 
 
         //工具栏上的所有的功能按钮和下拉框，可以在new编辑器的实例时选择自己需要的从新定义

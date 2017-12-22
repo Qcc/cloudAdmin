@@ -1,64 +1,96 @@
 <template>
   <el-col :span="20">
-    <el-form :model="article" :rules="rules" ref="sendArticleForm" size="mini" label-width="65px">
-      <el-form-item label="标题" prop="title">
-        <el-input v-model="article.title"></el-input>
-      </el-form-item>
-      <el-form-item label="分类" prop="category">
-        <el-select v-model="article.category" placeholder="请选择分类">
-          <el-option v-for="item in category" :key="item._id" v-if="item.type === 'article'" :label="item.label" :value="item.path">
-            <span style="float: left">{{ item.label }}</span>
-            <span style="float: right; color: #8492a6; font-size: 13px">/{{ item.path }}</span>
-          </el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="关键字" prop="keyword">
-        <el-input v-model="article.keyword"></el-input>
-      </el-form-item>
-      <el-form-item label="概要" prop="summary">
-        <el-input v-model="article.summary"></el-input>    
-      </el-form-item> 
-      <el-form-item prop="text">
-        <UmEditor v-bind:defaultMsg="defaultMsg" v-bind:config="config" ref="um"></UmEditor>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="onSubmit('sendArticleForm')">立即创建</el-button>
+    <el-form :model="article" :rules="rules" ref="sendArticleForm" size="mini">
+      <el-row >
+        <el-col :span="22">
+          <el-form-item prop="title">
+            <el-input v-model="article.title" placeholder='请输入标题'></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="2">
+          <el-form-item>
+          <el-button type="success" plain @click="onSubmit('sendArticleForm')">发布文章</el-button>
+        </el-form-item>
+        </el-col>
+      </el-row >
+      <el-row >
+        <el-col :span="12">
+          <el-row>
+          <el-col :span="12">
+            <el-form-item prop="category">
+              <el-select v-model="article.category" placeholder="请选择分类">
+                <el-option v-for="item in category" :key="item._id" v-if="item.type === 'article'" :label="item.label" :value="item.path">
+                  <span style="float: left">{{ item.label }}</span>
+                  <span style="float: right; color: #8492a6; font-size: 13px">/{{ item.path }}</span>
+                </el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+            <el-col :span="11" style="float:right">
+              <el-form-item prop="author">
+                <el-input v-model="article.author" placeholder='请输入作者，默认‘佚名’'></el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item prop="keyword">
+            <el-input v-model="article.keyword" placeholder='请输入关键词，用‘,’分隔'></el-input>
+          </el-form-item>
+          <el-form-item prop="summary">
+            <el-input type="textarea"  :rows="3" v-model="article.summary" placeholder='请输入概要'></el-input>    
+          </el-form-item> 
+        </el-col>
+        <el-col :span="12">
+          <el-form-item prop="titleImg" style="text-align: center;">
+            <el-upload
+              :action="actionUrl"
+              list-type="picture-card"
+              name="titleImg"
+              :limit="limit"
+              :on-success="handleonSuccess"
+              :on-preview="handlePictureCardPreview"
+              :on-remove="handleRemove">
+              <i>标题图片</i>
+            </el-upload>
+            <el-dialog :visible.sync="dialogVisible" size="tiny">
+              <img width="100%" :src="dialogImageUrl" alt="">
+            </el-dialog>
+          </el-form-item> 
+        </el-col>
+      </el-row >
+      <el-form-item prop="content">
+        <Editor ref="E"></Editor>
       </el-form-item>
     </el-form>
-    <button @click="getUEContent">获取内容</button>
-    <button @click="getContentTxt">获得纯文本</button>
-    <button @click="getPlainTxt">获得带格式的纯文本</button>&nbsp;
-    <button @click="getHtmlContentLength">获得html长度</button>
-    <button @click="getContentLength(true)">获得纯文本长度</button>&nbsp;
   </el-col>
 </template>
 <script>
-import UmEditor from './UMEditor'
+import Editor from './Editor'
 import {fetch, URL} from '../utils/connect.js'
 export default {
   components: {
-    UmEditor
+    Editor
   },
   data () {
     return {
-      defaultMsg: '初始文本',
-      config: {
-        initialFrameWidth: null,
-        initialFrameHeight: 320
-      },
       ctx: null,
+      limit: 1,
+      actionUrl: URL + 'kevin/upload.api',
+      dialogVisible: false,
+      dialogImageUrl: '',
       article: {
         title: '',
+        author: '',
+        titleImg: '',
         category: '',
         keyword: '',
         summary: '',
-        text: ''
+        content: ''
       },
       category: [],
       rules: {
         title: [
           { required: true, message: '请输入标题', trigger: 'blur' },
-          { min: 1, max: 5, message: '长度不能超过5个字符', trigger: 'change' }
+          { min: 1, max: 30, message: '长度不能超过5个字符', trigger: 'change' }
         ],
         category: [
           { required: true, message: '请选择分类', trigger: 'blur' }
@@ -71,7 +103,7 @@ export default {
           { required: true, message: '请输入概要', trigger: 'blur' },
           { min: 1, max: 200, message: '长度不能超过200个字符', trigger: 'change' }
         ],
-        text: [
+        content: [
           { required: true, message: '请输入正文', trigger: 'blur' },
           { min: 1, max: 30000, message: '长度不能超过30000个字符', trigger: 'change' }
         ]
@@ -79,7 +111,6 @@ export default {
     }
   },
   mounted: function () {
-    this.ctx = this.$refs.um.getUMCTX()
     this.initData()
   },
   methods: {
@@ -92,11 +123,14 @@ export default {
       this.category = data.entity
     },
     onSubmit (formName) {
-      this.article.text = this.ctx.getContent()
+      this.article.content = this.$refs.E.getContent()
       this.$refs[formName].validate((valid) => {
         if (valid) {
-          fetch(URL + 'kevin/article.api', this.onSubmitComplate, 'POST')
-          console.log('submit: ', this.article)
+          if (this.article.author === '') {
+            delete this.article.author
+          }
+          fetch(URL + 'kevin/article.api', this.onSubmitComplate, 'POST', this.article)
+          console.log('submit: ', JSON.stringify(this.article))
         }
       })
     },
@@ -114,30 +148,19 @@ export default {
         })
       }
     },
-    getHtmlContentLength () {
-      let content = this.ctx.getContentLength()
-      console.log(content)
+    handleRemove (file, fileList) {
+      this.visibleUpload = true
+      console.log(file, fileList)
     },
-    getContentLength (ingoneHtml) {
-      let content = this.ctx.getContentLength(ingoneHtml)
-      console.log(content)
+    handlePictureCardPreview (file) {
+      console.log(file)
+      console.log(file.url)
+      this.dialogImageUrl = file.url
+      this.dialogVisible = true
     },
-    getContentTxt () {
-      let content = this.ctx.getContentTxt()
-      console.log(content)
-    },
-    getPlainTxt () {
-      let content = this.ctx.getPlainTxt()
-      console.log(content)
-    },
-    getUEContent () {
-      let content = this.ctx.getContent()
-      this.$notify({
-        title: '获取成功，可在控制台查看！',
-        message: content,
-        type: 'success'
-      })
-      console.log(content)
+    handleonSuccess (response, file, fileList) {
+      console.log(response)
+      this.article.titleImg = response.path
     }
   }
 }

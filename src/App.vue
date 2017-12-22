@@ -1,6 +1,5 @@
 <template>
   <div id="app">
-    <div class="top-nav">dingbu</div>
     <el-row >
       <el-col :span="4">
         <Nav-bar/>

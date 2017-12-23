@@ -11,12 +11,15 @@
     name: 'editor',
     data () {
       return {
-        editorContent: ''
+        editor: null
       }
     },
     methods: {
       getContent () {
-        return this.editorContent
+        return this.editor.txt.html()
+      },
+      clearContent () {
+        this.editor.txt.clear()
       }
     },
     mounted () {
@@ -39,6 +42,7 @@
         }
       }
       editor.create()
+      this.editor = editor
     }
   }
 </script>

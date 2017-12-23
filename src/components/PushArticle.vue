@@ -4,7 +4,7 @@
       <el-row >
         <el-col :span="22">
           <el-form-item prop="title">
-            <el-input v-model="article.title" placeholder='请输入标题'></el-input>
+            <el-input v-model="article.title" autofocus placeholder='请输入标题'></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="2">
@@ -17,9 +17,9 @@
         <el-col :span="12">
           <el-row>
           <el-col :span="12">
-            <el-form-item prop="category">
-              <el-select v-model="article.category" placeholder="请选择分类">
-                <el-option v-for="item in category" :key="item._id" v-if="item.type === 'article'" :label="item.label" :value="item.path">
+            <el-form-item prop="categoryId">
+              <el-select v-model="article.categoryId" @change="categoryChange" placeholder="请选择分类">
+                <el-option v-for="item in category" :key="item._id" v-if="item.type === 'article'" :label="item.label" :value="item._id">
                   <span style="float: left">{{ item.label }}</span>
                   <span style="float: right; color: #8492a6; font-size: 13px">/{{ item.path }}</span>
                 </el-option>
@@ -33,7 +33,18 @@
             </el-col>
           </el-row>
           <el-form-item prop="keyword">
-            <el-input v-model="article.keyword" placeholder='请输入关键词，用‘,’分隔'></el-input>
+            <el-input v-model="keyword" ref="keywordfocus" v-show="visibleKeyword" @blur="keywordBlur" placeholder='请输入关键词，用 空格 或 ‘,’ 分隔'></el-input>
+            <div v-if="!visibleKeyword">
+              <el-tag
+                style="margin-right:4px"
+                v-for="tag in article.keyword"
+                @close="editKeyword"
+                :type="keywordType[Math.floor(Math.random()*5)]"
+                :key="tag"
+                closable>
+                {{tag}}
+              </el-tag>
+            </div>
           </el-form-item>
           <el-form-item prop="summary">
             <el-input type="textarea"  :rows="3" v-model="article.summary" placeholder='请输入概要'></el-input>    
@@ -45,6 +56,7 @@
               :action="actionUrl"
               list-type="picture-card"
               name="titleImg"
+              ref="uploadTitleImg"
               :limit="limit"
               :on-success="handleonSuccess"
               :on-preview="handlePictureCardPreview"
@@ -77,35 +89,37 @@ export default {
       actionUrl: URL + 'kevin/upload.api',
       dialogVisible: false,
       dialogImageUrl: '',
+      loading: null,
+      visibleKeyword: true, // 标签可编辑
+      keyword: '',
+      keywordType: ['', 'success', 'info', 'warning', 'danger'], // 标签样式
       article: {
         title: '',
         author: '',
         titleImg: '',
-        category: '',
-        keyword: '',
+        categoryId: '',
+        categoryPath: '',
+        categoryLabel: '',
+        keyword: [],
         summary: '',
         content: ''
       },
       category: [],
       rules: {
         title: [
-          { required: true, message: '请输入标题', trigger: 'blur' },
-          { min: 1, max: 30, message: '长度不能超过5个字符', trigger: 'change' }
+          { required: true, message: '请输入标题', trigger: 'blur' }
         ],
-        category: [
+        categoryId: [
           { required: true, message: '请选择分类', trigger: 'blur' }
         ],
         keyword: [
-          { required: true, message: '请输入关键词', trigger: 'blur' },
-          { min: 1, max: 100, message: '长度不能超过100个字符', trigger: 'change' }
+          { required: true, message: '请输入关键词', trigger: 'blur' }
         ],
         summary: [
-          { required: true, message: '请输入概要', trigger: 'blur' },
-          { min: 1, max: 200, message: '长度不能超过200个字符', trigger: 'change' }
+          { required: true, message: '请输入概要', trigger: 'blur' }
         ],
         content: [
-          { required: true, message: '请输入正文', trigger: 'blur' },
-          { min: 1, max: 30000, message: '长度不能超过30000个字符', trigger: 'change' }
+          { required: true, message: '请输入正文', trigger: 'blur' }
         ]
       }
     }
@@ -115,32 +129,38 @@ export default {
   },
   methods: {
     initData () {
-      console.log('获取数据...')
       fetch(URL + 'kevin/section.api', this.onInitComplate, 'GET')
     },
     onInitComplate (data) {
-      console.log('链接了...', data)
       this.category = data.entity
     },
     onSubmit (formName) {
-      this.article.content = this.$refs.E.getContent()
+      this.article.content = this.$refs['E'].getContent()
       this.$refs[formName].validate((valid) => {
         if (valid) {
+          this.loading = this.$loading({
+            lock: true,
+            text: '提交中...',
+            spinner: 'el-icon-loading',
+            background: 'rgba(0, 0, 0, 0.7)'
+          })
           if (this.article.author === '') {
             delete this.article.author
           }
           fetch(URL + 'kevin/article.api', this.onSubmitComplate, 'POST', this.article)
-          console.log('submit: ', JSON.stringify(this.article))
         }
       })
     },
     onSubmitComplate (data) {
+      this.loading.close()
       if (data.status === 200) {
         this.$message({
           type: 'success',
           message: '文章已发布可以在首页查看。'
         })
-        // this.$refs['sendArticleForm'].resetFields()
+        this.$refs['sendArticleForm'].resetFields()
+        this.$refs['uploadTitleImg'].clearFiles()
+        this.$refs['E'].clearContent()
       } else {
         this.$message({
           type: 'error',
@@ -148,13 +168,38 @@ export default {
         })
       }
     },
+    categoryChange (value) {
+      for (let i = 0; i < this.category.length; i++) {
+        if (this.category[i]._id === value) {
+          this.article.categoryLabel = this.category[i].label
+          this.article.categoryPath = this.category[i].path
+          return
+        }
+      }
+    },
+    // 关键词数组
+    keywordBlur (event) {
+      if (event.target.value !== '') {
+        this.article.keyword = []
+        if (event.target.value.indexOf(' ') !== -1) {
+          this.article.keyword = event.target.value.split(' ')
+        } else if (event.target.value.indexOf(',') !== -1) {
+          this.article.keyword = event.target.value.split(',')
+        } else if (event.target.value.indexOf('，') !== -1) {
+          this.article.keyword = event.target.value.split('，')
+        } else {
+          this.article.keyword.push(event.target.value)
+        }
+        this.visibleKeyword = false
+      }
+    },
+    editKeyword (e) {
+      this.visibleKeyword = true
+    },
     handleRemove (file, fileList) {
       this.visibleUpload = true
-      console.log(file, fileList)
     },
     handlePictureCardPreview (file) {
-      console.log(file)
-      console.log(file.url)
       this.dialogImageUrl = file.url
       this.dialogVisible = true
     },

@@ -170,7 +170,7 @@ export default {
       }
     },
     onInitComplate (data) {
-      console.log('链接了...', data)
+      console.log('链接了...', data.entity[3])
       this.localAttr(data.entity)
       var tree = data.entity.sort(function (a, b) {
         return a.level - b.level

@@ -18,12 +18,15 @@
           <el-row>
           <el-col :span="12">
             <el-form-item prop="categoryId">
-              <el-select v-model="article.categoryId" @change="categoryChange" placeholder="请选择分类">
-                <el-option v-for="item in category" :key="item._id" v-if="item.type === 'article'" :label="item.label" :value="item._id">
-                  <span style="float: left">{{ item.label }}</span>
-                  <span style="float: right; color: #8492a6; font-size: 13px">/{{ item.path }}</span>
-                </el-option>
-              </el-select>
+              <el-cascader
+                placeholder="请选择分类"
+                clearable
+                change-on-select
+                :options="category"
+                :props="props"
+                v-model="categoryValue"
+                @change="categoryChange">
+              </el-cascader>
             </el-form-item>
           </el-col>
             <el-col :span="11" style="float:right">
@@ -33,13 +36,13 @@
             </el-col>
           </el-row>
           <el-form-item prop="keyword">
-            <el-input v-model="keyword" ref="keywordfocus" v-show="visibleKeyword" @blur="keywordBlur" placeholder='请输入关键词，用 空格 或 ‘,’ 分隔'></el-input>
+            <el-input v-model="keyword" ref="keywordfocus" v-show="visibleKeyword" @blur="keywordBlur" placeholder='请输入关键词，用 空格 或 逗号 分隔'></el-input>
             <div v-if="!visibleKeyword">
               <el-tag
                 style="margin-right:4px"
-                v-for="tag in article.keyword"
+                v-for="(tag, index) in article.keyword"
                 @close="editKeyword"
-                :type="keywordType[Math.floor(Math.random()*5)]"
+                :type="keywordType[index]"
                 :key="tag"
                 closable>
                 {{tag}}
@@ -104,7 +107,13 @@ export default {
         summary: '',
         content: ''
       },
+      categoryValue: [],
       category: [],
+      props: {
+        label: 'label',
+        value: '_id',
+        children: 'children'
+      },
       rules: {
         title: [
           { required: true, message: '请输入标题', trigger: 'blur' }
@@ -132,6 +141,28 @@ export default {
       fetch(URL + 'kevin/section.api', this.onInitComplate, 'GET')
     },
     onInitComplate (data) {
+      if (data.status !== 200) {
+        this.$message({
+          type: 'error',
+          message: '出现错误，加载分类失败。'
+        })
+        return
+      }
+      for (var i = 0; i < data.entity.length; i++) {
+        if (data.entity[i].parent === null) {
+          this.category.push(data.entity[i])
+        } else {
+          for (var j = 0; j < this.category.length; j++) {
+            if (data.entity[i].parent === this.category[j]._id) {
+              if (!this.category[j].children) {
+                this.category[j].children = []
+              }
+              this.category[j].children.push(data.entity[i])
+              break
+            }
+          }
+        }
+      }
       this.category = data.entity
     },
     onSubmit (formName) {
@@ -161,6 +192,9 @@ export default {
         this.$refs['sendArticleForm'].resetFields()
         this.$refs['uploadTitleImg'].clearFiles()
         this.$refs['E'].clearContent()
+        this.keyword = ''
+        this.visibleKeyword = true
+        this.categoryValue = []
       } else {
         this.$message({
           type: 'error',
@@ -169,8 +203,9 @@ export default {
       }
     },
     categoryChange (value) {
+      this.article.categoryId = value[value.length - 1]
       for (let i = 0; i < this.category.length; i++) {
-        if (this.category[i]._id === value) {
+        if (this.category[i]._id === this.article.categoryId) {
           this.article.categoryLabel = this.category[i].label
           this.article.categoryPath = this.category[i].path
           return
@@ -179,6 +214,7 @@ export default {
     },
     // 关键词数组
     keywordBlur (event) {
+      console.log('event ', event)
       if (event.target.value !== '') {
         this.article.keyword = []
         if (event.target.value.indexOf(' ') !== -1) {
@@ -204,7 +240,6 @@ export default {
       this.dialogVisible = true
     },
     handleonSuccess (response, file, fileList) {
-      console.log(response)
       this.article.titleImg = response.path
     }
   }

@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div id="editorElem" style="text-align:left"></div>
+        <div id="editorElem" style="text-align:left;"></div>
     </div>
 </template>
 

@@ -149,6 +149,9 @@ export default {
         return
       }
       for (var i = 0; i < data.entity.length; i++) {
+        if (data.entity[i].type !== 'article') {
+          continue
+        }
         if (data.entity[i].parent === null) {
           this.category.push(data.entity[i])
         } else {
@@ -163,7 +166,6 @@ export default {
           }
         }
       }
-      this.category = data.entity
     },
     onSubmit (formName) {
       this.article.content = this.$refs['E'].getContent()

@@ -1,6 +1,6 @@
 import reqwest from 'reqwest'
 
-export const URL = 'http://localhost:3001/'
+export const URL = 'http://127.0.0.1:3001/'
 /*
 ajax请求函数
 @url 请求url
@@ -9,7 +9,7 @@ ajax请求函数
 @params 请求参数对象
 */
 // 获取
-export function fetch (url, onComplete, method, params = {}) {
+export function fetch (url, onComplete, method, params = {}, other) {
   // console.log("调用了fecth =", 'url', url, 'method', method,'params:', params)
   if (typeof onComplete !== 'function') {
     // console.log("成功获取到数据,回调函数不正确", onComplete)
@@ -26,7 +26,11 @@ export function fetch (url, onComplete, method, params = {}) {
     type: 'json'
   })
   .then((data) => {
-    onComplete(data)
+    if (other) {
+      onComplete(data, other)
+    } else {
+      onComplete(data)
+    }
     // console.log('服务器错误', JSON.stringify(data, null, 4))
   })
   .fail((err, msg) => {

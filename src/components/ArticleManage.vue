@@ -1,37 +1,14 @@
 <template>
   <el-col :span="20">
-    <h1>文章管理</h1>
-    <div class="article-box">
+    <div v-if="editing" class="article-box">
       <ul class="article-list">
-        <li>
-          <div class="article-content">
-            <div class="left-img">
-              <a><img src="http://127.0.0.1:3001/uploads/201812/7v337frwgut9v6vz.JPEG"/></a>
-            </div>
-            <div class="right-news">
-              <div class="article-delete" title="删除">×</div>
-              <div class="article-title">
-                <a href="#">大法师更多发改大法官地方个地方个地方高飞的个地方个地方个</a>
-              </div>
-              <div class="article-edit iconfont icon-wenzhang" title="编辑"></div>              
-            </div>
-          </div>
-        </li>
-        <li>
-          <div class="article-content">
-            <div class="left-img">
-              <a><img src="http://127.0.0.1:3001/uploads/201812/7v337frwgut9v6vz.JPEG"/></a>
-            </div>
-            <div class="right-news">
-              <div class="article-title">
-                <a href="#">ffghfghfgh浮动和广士大夫商店士大夫商店发射的发泛的个地方个地方个地方更多个士大夫到沙发</a>
-              </div>
-            </div>
-          </div>
+        <li v-for="item in articles" :key="item._id">
+          <article-box :article="item" @delete="deleteArticle" @edit="editArticle"></article-box>
         </li>
       </ul>
     </div>
-    <div class="pagination">
+    <edit-article v-if="!editing" :modArticle="article" @cancleEdit="cancle"></edit-article>
+    <div v-if="editing" class="pagination">
       <el-pagination
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
@@ -45,18 +22,83 @@
   </el-col>
 </template>
 <script>
+import ArticleBox from './ArticleBox'
+import EditArticle from './EditArticle'
+import {fetch, URL} from '../utils/connect.js'
 export default {
+  components: {
+    ArticleBox,
+    EditArticle
+  },
   data () {
     return {
-      currentPage: 4
+      editing: true,
+      currentPage: 1,
+      columns: null,
+      articles: [],
+      article: {}
     }
   },
+  mounted: function () {
+    this.initData(this.columns)
+  },
   methods: {
+    initData (params) {
+      console.log('获取数据...')
+      fetch(URL + 'kevin/article.api', this.onInitComplate, 'GET', params)
+    },
+    onInitComplate (data) {
+      if (data.status !== 200) {
+        this.$message({
+          type: 'error',
+          message: '操作失败，获取数据失败'
+        })
+        return
+      }
+      this.articles = data.entity
+    },
     handleSizeChange (val) {
       console.log(`每页 ${val} 条`)
     },
     handleCurrentChange (val) {
       console.log(`当前页: ${val}`)
+    },
+    deleteArticle (event) {
+      this.$confirm('您确认要删除 [ ' + event.title + ' ] 吗?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        fetch(URL + 'kevin/article.api', this.onRemoveComplate, 'DELETE', {id: event._id}, event)
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消删除'
+        })
+      })
+    },
+    cancle (e) {
+      this.editing = true
+    },
+    onRemoveComplate (data, event) {
+      if (data.status !== 200) {
+        this.$message({
+          type: 'error',
+          message: '操作失败，文章未删除'
+        })
+      } else {
+        for (var i = 0; i < this.articles.length; i++) {
+          if (this.articles[i]._id === event._id) {
+            this.articles.splice(i, 1)
+            break
+          }
+        }
+      }
+    },
+    editArticle (event) {
+      this.editing = false
+      this.article = event
+      console.log('当前id:', event)
     }
   }
 }
@@ -65,91 +107,9 @@ export default {
 .article-box{
   width: 100%;
 }
-.article-list{
-}
 .article-list li{
-  margin-right: 10px;
+  margin-right: 15px;
   margin-bottom: 10px;
   float: left;
-}
-.article-title{
-  display: block;
-  font-size: 20px;
-  line-height: 1.3;
-  margin-bottom: 4px;
-  font-weight: 300;
-  max-height: 80px;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.article-content{
-  height: 102px;
-  width: 500px;
-  position: relative;
-  padding: 10px 0;
-  /* border-bottom: 1px solid #e8e8e8; */
-  box-shadow: 1px 1px 1px 1px rgba(120,120,120,0.2);
-}
-.article-content:hover{
-  box-shadow: 1px 1px 2px 2px rgba(120,120,120,0.4);
-}
-.left-img{
-  width: 158px;
-  height: 102px;
-  margin-right: 16px;
-  float: left;
-  overflow: hidden;
-  position: relative;
-}
-.left-img>a>img{
-  display: inline-block;
-  max-width: 100%;
-  height: auto;
-  vertical-align: middle;
-  transition: all .5s ease-out .1s;
-}
-.right-news{
-  height: 100%;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.article-title{
-  display: block;
-  font-size: 20px;
-  line-height: 1.3;
-  margin-bottom: 4px;
-  font-weight: 300;
-  max-height: 80px;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.article-content:hover .article-delete,.article-content:hover .article-edit{
-  font-size: 20px
-}
-.article-delete{
-  position: absolute;
-  top: 0;
-  right: 10px;
-  font-size: 16px;
-  font-weight: 300;
-  cursor: pointer;
-}
-.article-edit{
-  cursor: pointer;
-  position: absolute;
-  bottom: 5px;
-  font-size: 16px;  
-  right: 10px;
-}
-.pagination{
-  clear: both;
 }
 </style>

@@ -9,6 +9,9 @@
   import E from 'wangeditor'
   export default {
     name: 'editor',
+    props: {
+      content: {type: String}
+    },
     data () {
       return {
         editor: null
@@ -42,6 +45,9 @@
         }
       }
       editor.create()
+      if (this.content) {
+        editor.txt.html(this.content)
+      }
       this.editor = editor
     }
   }

@@ -1,22 +1,40 @@
 <template>
   <el-col :span="20">
     <div v-if="editing" class="article-box">
-      <ul class="article-list">
-        <li v-for="item in articles" :key="item._id">
-          <article-box :article="item" @delete="deleteArticle" @edit="editArticle"></article-box>
-        </li>
-      </ul>
+      <el-col :span="4" style="margin-bottom:10px">
+        <el-cascader
+          class="search-article-type"
+          placeholder="请选择分类"
+          clearable
+          change-on-select
+          :options="category"
+          :props="props">
+        </el-cascader>
+      </el-col>
+      <el-col :span="16">
+        <el-input v-model="search" class="search-article-input" placeholder="请输入内容"></el-input>
+      </el-col>
+      <el-col :span="4">
+        <el-button  class="search-article-btn" type="primary" plain icon="el-icon-search">搜索文章</el-button>
+      </el-col>
+      <el-col :span="24">
+        <ul class="article-list">
+          <li v-for="item in articles" :key="item._id">
+            <article-box :article="item" @delete="deleteArticle" @edit="editArticle"></article-box>
+          </li>
+        </ul>
+      </el-col>
     </div>
-    <edit-article v-if="!editing" :modArticle="article" @cancleEdit="cancle"></edit-article>
+    <edit-article v-if="!editing" :modArticle="article" :columns="category" @cancleEdit="cancle"></edit-article>
     <div v-if="editing" class="pagination">
       <el-pagination
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
         :current-page="currentPage"
-        :page-sizes="[100, 200, 300, 400]"
-        :page-size="100"
+        :page-sizes="[10, 50, 200, 1000]"
+        :page-size="limit"
         layout="total, sizes, prev, pager, next, jumper"
-        :total="400">
+        :total="count">
       </el-pagination>
     </div>
   </el-col>
@@ -34,20 +52,32 @@ export default {
     return {
       editing: true,
       currentPage: 1,
-      columns: null,
+      column: '',
       articles: [],
-      article: {}
+      article: {},
+      category: [],
+      limit: 10,
+      count: 0,
+      search: '',
+      categoryValue: [],
+      props: {
+        label: 'label',
+        value: '_id',
+        children: 'children'
+      }
     }
   },
   mounted: function () {
-    this.initData(this.columns)
+    this.initData()
   },
   methods: {
-    initData (params) {
-      console.log('获取数据...')
-      fetch(URL + 'kevin/article.api', this.onInitComplate, 'GET', params)
+    initData () {
+      var params = `type=${this.column}&currentPage=${this.currentPage - 1}&limit=${this.limit}`
+      // var params = {type: this.column, currentPage: this.currentPage, limit: this.limit}
+      fetch(URL + 'kevin/article.api?' + params, this.onInitComplate, 'GET')
     },
     onInitComplate (data) {
+      console.log('获取数据...', data)
       if (data.status !== 200) {
         this.$message({
           type: 'error',
@@ -55,13 +85,34 @@ export default {
         })
         return
       }
-      this.articles = data.entity
+      this.count = data.entity.articlesCount
+      this.articles = data.entity.articles
+      for (var i = 0; i < data.entity.columns.length; i++) {
+        if (data.entity.columns[i].type !== 'article') {
+          continue
+        }
+        if (data.entity.columns[i].parent === null) {
+          this.category.push(data.entity.columns[i])
+        } else {
+          for (var j = 0; j < this.category.length; j++) {
+            if (data.entity.columns[i].parent === this.category[j]._id) {
+              if (!this.category[j].children) {
+                this.category[j].children = []
+              }
+              this.category[j].children.push(data.entity.columns[i])
+              break
+            }
+          }
+        }
+      }
     },
     handleSizeChange (val) {
-      console.log(`每页 ${val} 条`)
+      this.limit = val
+      this.initData()
     },
     handleCurrentChange (val) {
-      console.log(`当前页: ${val}`)
+      this.currentPage = val
+      this.initData()
     },
     deleteArticle (event) {
       this.$confirm('您确认要删除 [ ' + event.title + ' ] 吗?', '提示', {
@@ -111,5 +162,14 @@ export default {
   margin-right: 15px;
   margin-bottom: 10px;
   float: left;
+}
+.search-article-btn{
+  border-radius: 0 5px 5px 0;
+}
+.search-article-input input{
+  border-radius: 0;
+}
+.search-article-type input{
+  border-radius: 5px 0 0 5px;
 }
 </style>

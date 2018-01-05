@@ -22,10 +22,9 @@
               placeholder="请选择分类"
               clearable
               change-on-select
-              :options="category"
+              :options="columns"
               :props="props"
-              v-model="categoryValue"
-              @change="categoryChange">
+              v-model="categoryValue">
             </el-cascader>
           </el-form-item>
         </el-col>
@@ -57,6 +56,7 @@
         <el-form-item prop="titleImg" style="text-align: center;">
           <el-upload
             :action="actionUrl"
+            :file-list="fileList"
             list-type="picture-card"
             name="titleImg"
             ref="uploadTitleImg"
@@ -73,7 +73,7 @@
       </el-col>
     </el-row >
     <el-form-item prop="content">
-      <Editor ref="E"></Editor>
+      <Editor :content="modArticle.content" ref="E"></Editor>
     </el-form-item>
   </el-form>
 </template>
@@ -82,7 +82,8 @@ import Editor from './Editor'
 import {fetch, URL} from '../utils/connect.js'
 export default {
   props: {
-    modArticle: {type: Object}
+    modArticle: {type: Object},
+    columns: {type: Array}
   },
   components: {
     Editor
@@ -97,6 +98,7 @@ export default {
       loading: null,
       visibleKeyword: true, // 标签可编辑
       keyword: '',
+      fileList: [],
       keywordType: ['', 'success', 'info', 'warning', 'danger'], // 标签样式
       article: {
         title: '',
@@ -110,7 +112,6 @@ export default {
         content: ''
       },
       categoryValue: [],
-      category: [],
       props: {
         label: 'label',
         value: '_id',
@@ -136,54 +137,60 @@ export default {
     }
   },
   mounted: function () {
-    this.initData()
     this.article = this.modArticle
-  },
-  methods: {
-    initData () {
-      fetch(URL + 'kevin/section.api', this.onInitComplate, 'GET')
-    },
-    onInitComplate (data) {
-      if (data.status !== 200) {
-        this.$message({
-          type: 'error',
-          message: '出现错误，加载分类失败。'
-        })
-        return
+    this.keyword = this.modArticle.keyword.join()
+    this.article.keyword = this.modArticle.keyword
+    this.visibleKeyword = false
+    if (this.modArticle.titleImg) {
+      this.fileList.push({url: URL + this.modArticle.titleImg})
+    }
+    for (var i = 0; i < this.columns.length; i++) {
+      if (this.columns[i]._id === this.article.categoryId) {
+        this.categoryValue.push(this.article.categoryId)
+        break
       }
-      for (var i = 0; i < data.entity.length; i++) {
-        if (data.entity[i].type !== 'article') {
-          continue
-        }
-        if (data.entity[i].parent === null) {
-          this.category.push(data.entity[i])
-        } else {
-          for (var j = 0; j < this.category.length; j++) {
-            if (data.entity[i].parent === this.category[j]._id) {
-              if (!this.category[j].children) {
-                this.category[j].children = []
-              }
-              this.category[j].children.push(data.entity[i])
-              break
-            }
+      if (this.columns[i].children !== undefined) {
+        for (var j = 0; j < this.columns[i].children.length; j++) {
+          if (this.columns[i].children[j]._id === this.article.categoryId) {
+            this.categoryValue.push(this.columns[i]._id, this.columns[i].children[j]._id)
+            break
           }
         }
       }
-    },
+    }
+  },
+  methods: {
     onSubmit (formName) {
       this.article.content = this.$refs['E'].getContent()
       this.$refs[formName].validate((valid) => {
         if (valid) {
           this.loading = this.$loading({
             lock: true,
-            text: '提交中...',
+            text: '修改中...',
             spinner: 'el-icon-loading',
             background: 'rgba(0, 0, 0, 0.7)'
           })
           if (this.article.author === '') {
             delete this.article.author
           }
-          fetch(URL + 'kevin/article.api', this.onSubmitComplate, 'POST', this.article)
+          this.article.categoryId = this.categoryValue[this.categoryValue.length - 1]
+          for (var i = 0; i < this.columns.length; i++) {
+            if (this.columns[i]._id === this.article.categoryId) {
+              this.article.categoryLabel = this.columns[i].label
+              this.article.categoryPath = this.columns[i].path
+              break
+            }
+            if (this.columns[i].children !== undefined) {
+              for (var j = 0; j < this.columns[i].children.length; j++) {
+                if (this.columns[i].children[j]._id === this.article.categoryId) {
+                  this.article.categoryLabel = this.columns[i].children[j].label
+                  this.article.categoryPath = this.columns[i].children[j].path
+                  break
+                }
+              }
+            }
+          }
+          fetch(URL + 'kevin/article.api', this.onSubmitComplate, 'PUT', this.article)
         }
       })
     },
@@ -192,33 +199,13 @@ export default {
     },
     onSubmitComplate (data) {
       this.loading.close()
-      if (data.status === 200) {
-        this.$message({
-          type: 'success',
-          message: '文章已发布可以在首页查看。'
-        })
-        this.$refs['sendArticleForm'].resetFields()
-        this.$refs['uploadTitleImg'].clearFiles()
-        this.$refs['E'].clearContent()
-        this.keyword = ''
-        this.visibleKeyword = true
-        this.categoryValue = []
-      } else {
+      if (data.status !== 200) {
         this.$message({
           type: 'error',
-          message: '出现错误，文章未发布。'
+          message: '数据库错误。'
         })
       }
-    },
-    categoryChange (value) {
-      this.article.categoryId = value[value.length - 1]
-      for (let i = 0; i < this.category.length; i++) {
-        if (this.category[i]._id === this.article.categoryId) {
-          this.article.categoryLabel = this.category[i].label
-          this.article.categoryPath = this.category[i].path
-          return
-        }
-      }
+      this.$emit('cancleEdit')
     },
     // 关键词数组
     keywordBlur (event) {

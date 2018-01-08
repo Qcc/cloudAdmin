@@ -8,14 +8,20 @@
           clearable
           change-on-select
           :options="category"
-          :props="props">
+          :props="props"
+          @change="selectColumnsType">
         </el-cascader>
       </el-col>
       <el-col :span="16">
-        <el-input v-model="search" class="search-article-input" placeholder="请输入内容"></el-input>
+        <el-input v-model="search" class="search-article-input" clearable placeholder="请输入标题"></el-input>
       </el-col>
       <el-col :span="4">
-        <el-button  class="search-article-btn" type="primary" plain icon="el-icon-search">搜索文章</el-button>
+        <el-button @click="onSearchArticle" class="search-article-btn" type="primary" plain icon="el-icon-search">搜索文章</el-button>
+      </el-col>
+      <el-col :span="24">
+        <div v-if="articles.length === 0" class="no-articles">
+          <h4>没有文章可修改～！</h4>
+        </div>
       </el-col>
       <el-col :span="24">
         <ul class="article-list">
@@ -52,7 +58,7 @@ export default {
     return {
       editing: true,
       currentPage: 1,
-      column: '',
+      categoryId: '',
       articles: [],
       article: {},
       category: [],
@@ -72,7 +78,7 @@ export default {
   },
   methods: {
     initData () {
-      var params = `type=${this.column}&currentPage=${this.currentPage - 1}&limit=${this.limit}`
+      var params = `search=${this.search}&type=${this.categoryId}&currentPage=${this.currentPage - 1}&limit=${this.limit}`
       // var params = {type: this.column, currentPage: this.currentPage, limit: this.limit}
       fetch(URL + 'kevin/article.api?' + params, this.onInitComplate, 'GET')
     },
@@ -87,6 +93,7 @@ export default {
       }
       this.count = data.entity.articlesCount
       this.articles = data.entity.articles
+      this.category = []
       for (var i = 0; i < data.entity.columns.length; i++) {
         if (data.entity.columns[i].type !== 'article') {
           continue
@@ -150,6 +157,25 @@ export default {
       this.editing = false
       this.article = event
       console.log('当前id:', event)
+    },
+    selectColumnsType (value) {
+      if (value.length === 0) {
+        this.categoryId = ''
+      } else {
+        this.categoryId = value[value.length - 1]
+      }
+      this.initData()
+    },
+    // 模糊查询标题
+    onSearchArticle () {
+      if (this.search === '') {
+        this.$message({
+          type: 'error',
+          message: '请输入标题！'
+        })
+      } else {
+        this.initData()
+      }
     }
   }
 }
@@ -171,5 +197,12 @@ export default {
 }
 .search-article-type input{
   border-radius: 5px 0 0 5px;
+}
+.no-articles{
+  text-align: center;
+  height: 100px;
+}
+.no-articles>h4{
+  line-height: 100px;
 }
 </style>

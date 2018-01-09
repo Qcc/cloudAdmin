@@ -8,6 +8,7 @@
           clearable
           change-on-select
           :options="category"
+          v-model="categoryValue"
           :props="props"
           @change="selectColumnsType">
         </el-cascader>
@@ -32,17 +33,19 @@
       </el-col>
     </div>
     <edit-article v-if="!editing" :modArticle="article" :columns="category" @cancleEdit="cancle"></edit-article>
-    <div v-if="editing" class="pagination">
-      <el-pagination
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-        :current-page="currentPage"
-        :page-sizes="[10, 50, 200, 1000]"
-        :page-size="limit"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="count">
-      </el-pagination>
-    </div>
+    <el-col>
+      <div v-if="articles.length !== 0 && editing" class="pagination">
+        <el-pagination
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+          :current-page="currentPage"
+          :page-sizes="[10, 50, 200, 1000]"
+          :page-size="limit"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="count">
+        </el-pagination>
+      </div>
+    </el-col>
   </el-col>
 </template>
 <script>

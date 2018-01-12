@@ -36,7 +36,7 @@
       editor.customConfig.uploadFileName = 'titleImg'
       editor.customConfig.uploadImgHooks = {
         customInsert: function (insertImg, result, editor) {
-          // 图片上传并返回结果，自定义插入图片的事件（而不是编辑器自动插入图片！！！）
+          // 图片上传并返回结果，自定义插入图片的事件（而不是编辑器自动插入图片！！！）aa
           // insertImg 是插入图片的函数，editor 是编辑器对象，result 是服务器端返回的结果
           // 举例：假如上传图片成功后，服务器端返回的是 {url:'....'} 这种格式，即可这样插入图片：
           var url = URL + result.path

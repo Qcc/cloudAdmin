@@ -6,7 +6,7 @@
 
 <script>
   import {URL} from '../utils/connect.js'
-  import E from 'wangeditor'
+  import E from 'wangeditor-code'
   export default {
     name: 'editor',
     props: {

@@ -34,6 +34,26 @@
       editor.customConfig.uploadImgMaxLength = 1
       editor.customConfig.uploadImgServer = URL + 'kevin/upload.api'
       editor.customConfig.uploadFileName = 'titleImg'
+      editor.customConfig.codeLanguage = [
+        'PHP',
+        'css',
+        'html',
+        'javascript',
+        'java',
+        'csharp',
+        'cpp',
+        'c',
+        'python',
+        'aspnet',
+        'json',
+        'bash',
+        'ruby',
+        'lua',
+        'sql',
+        'swift',
+        'docker',
+        'objectivec'
+      ]
       editor.customConfig.uploadImgHooks = {
         customInsert: function (insertImg, result, editor) {
           // 图片上传并返回结果，自定义插入图片的事件（而不是编辑器自动插入图片！！！）aa

@@ -1,6 +1,6 @@
 import reqwest from 'reqwest'
 
-export const URL = 'http://127.0.0.1:3001/'
+export const URL = 'http://127.0.0.1:3000/'
 /*
 ajax请求函数
 @url 请求url

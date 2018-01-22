@@ -18,7 +18,7 @@ export function fetch (url, onComplete, method, params, other) {
   reqwest({
     url: url,
     method: method,
-    crossDomain: true, // 跨域
+    crossDomain: true, // 跨 域
     withCredentials: true, // 跨域时带Cookie
     data: JSON.stringify(params),
     dataType: 'json',
